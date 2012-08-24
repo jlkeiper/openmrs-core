@@ -164,8 +164,8 @@ public class Obs extends BaseOpenmrsData implements java.io.Serializable {
 	 * @return a new Obs object with all the same attributes as the given obs
 	 */
 	public static Obs newInstance(Obs obsToCopy) {
-		Obs newObs = new Obs(obsToCopy.getPerson(), obsToCopy.getConcept(), obsToCopy.getObsDatetime(), obsToCopy
-		        .getLocation());
+		Obs newObs = new Obs(obsToCopy.getPerson(), obsToCopy.getConcept(), obsToCopy.getObsDatetime(),
+		        obsToCopy.getLocation());
 		
 		newObs.setObsGroup(obsToCopy.getObsGroup());
 		newObs.setAccessionNumber(obsToCopy.getAccessionNumber());
@@ -878,53 +878,6 @@ public class Obs extends BaseOpenmrsData implements java.io.Serializable {
 	 * This will be null unless you call:
 	 * 
 	 * <pre>
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
 	 * 
 	 * Obs obsWithComplexData = Context.getObsService().getComplexObs(obsId, OpenmrsConstants.RAW_VIEW);
 	 * </pre>
