@@ -122,6 +122,13 @@ public class Obs extends BaseOpenmrsData implements java.io.Serializable {
 	
 	private Obs previousVersion;
 	
+	public static final String FORM_PATH_SEPARATOR = "^";
+	
+	/**
+	 * @since 1.10
+	 */
+	private String formNamespaceAndPath;
+	
 	/** default constructor */
 	public Obs() {
 	}
@@ -157,8 +164,8 @@ public class Obs extends BaseOpenmrsData implements java.io.Serializable {
 	 * @return a new Obs object with all the same attributes as the given obs
 	 */
 	public static Obs newInstance(Obs obsToCopy) {
-		Obs newObs = new Obs(obsToCopy.getPerson(), obsToCopy.getConcept(), obsToCopy.getObsDatetime(),
-		        obsToCopy.getLocation());
+		Obs newObs = new Obs(obsToCopy.getPerson(), obsToCopy.getConcept(), obsToCopy.getObsDatetime(), obsToCopy
+		        .getLocation());
 		
 		newObs.setObsGroup(obsToCopy.getObsGroup());
 		newObs.setAccessionNumber(obsToCopy.getAccessionNumber());
@@ -873,6 +880,52 @@ public class Obs extends BaseOpenmrsData implements java.io.Serializable {
 	 * <pre>
 	 * 
 	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
 	 * Obs obsWithComplexData = Context.getObsService().getComplexObs(obsId, OpenmrsConstants.RAW_VIEW);
 	 * </pre>
 	 * 
@@ -1128,4 +1181,55 @@ public class Obs extends BaseOpenmrsData implements java.io.Serializable {
 		return getPreviousVersion() != null;
 	}
 	
+	/**
+	 * @return the formField
+	 * @since 1.10
+	 * @should return the namespace for a form field that has no path
+	 * @should return the correct namespace for a form field with a path
+	 * @should return null if the namespace is not specified
+	 */
+	public String getFormFieldNamespace() {
+		if (StringUtils.isNotBlank(formNamespaceAndPath)) {
+			formNamespaceAndPath = formNamespaceAndPath.trim();
+			//Only the path was specified
+			if (formNamespaceAndPath.startsWith(FORM_PATH_SEPARATOR))
+				return null;
+			return formNamespaceAndPath.substring(0, formNamespaceAndPath.indexOf(FORM_PATH_SEPARATOR));
+		}
+		
+		return formNamespaceAndPath;
+	}
+	
+	/**
+	 * @return the formField
+	 * @since 1.10
+	 * @should return the path for a form field that has no namespace
+	 * @should return the correct path for a form field with a namespace
+	 * @should return null if the path is not specified
+	 */
+	public String getFormFieldPath() {
+		if (StringUtils.isNotBlank(formNamespaceAndPath)) {
+			formNamespaceAndPath = formNamespaceAndPath.trim();
+			//Only the namespace was specified
+			if (formNamespaceAndPath.endsWith(FORM_PATH_SEPARATOR))
+				return null;
+			return formNamespaceAndPath.substring(formNamespaceAndPath.indexOf(FORM_PATH_SEPARATOR) + 1);
+		}
+		
+		return formNamespaceAndPath;
+	}
+	
+	/**
+	 * @param formNamespaceAndPath the formField to set
+	 * @since 1.10
+	 * @should set the underlying formNamespaceAndPath in the correct pattern
+	 */
+	public void setFormField(String namespace, String formFieldPath) {
+		if (StringUtils.isNotBlank(namespace) && StringUtils.isNotBlank(formFieldPath))
+			formNamespaceAndPath = namespace + FORM_PATH_SEPARATOR + formFieldPath;
+		else if (StringUtils.isNotBlank(namespace))
+			formNamespaceAndPath = namespace + FORM_PATH_SEPARATOR;
+		else if (StringUtils.isNotBlank(formFieldPath))
+			formNamespaceAndPath = FORM_PATH_SEPARATOR + formFieldPath;
+	}
 }
