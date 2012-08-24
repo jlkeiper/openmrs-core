@@ -348,4 +348,91 @@ public class ObsTest {
 		parent.addGroupMember(child);
 		assertTrue("When checking for Obs grouping, should include voided Obs", parent.isObsGrouping());
 	}
+	
+	/**
+	 * @see {@link Obs#setFormField(String,String)}
+	 */
+	@Test
+	@Verifies(value = "should set the underlying formNamespaceAndPath in the correct pattern", method = "setFormField(String,String)")
+	public void setFormField_shouldSetTheUnderlyingFormNamespaceAndPathInTheCorrectPattern() throws Exception {
+		final String ns = "my ns";
+		final String path = "my path";
+		Obs obs = new Obs();
+		obs.setFormField(ns, path);
+		java.lang.reflect.Field formNamespaceAndPathProperty = Obs.class.getDeclaredField("formNamespaceAndPath");
+		formNamespaceAndPathProperty.setAccessible(true);
+		Assert.assertEquals(ns + Obs.FORM_PATH_SEPARATOR + path, formNamespaceAndPathProperty.get(obs));
+	}
+	
+	/**
+	 * @see {@link Obs#getFormFieldNamespace()}
+	 */
+	@Test
+	@Verifies(value = "should return null if the namespace is not specified", method = "getFormFieldNamespace()")
+	public void getFormFieldNamespace_shouldReturnNullIfTheNamespaceIsNotSpecified() throws Exception {
+		Obs obs = new Obs();
+		obs.setFormField("", "my path");
+		Assert.assertNull(obs.getFormFieldNamespace());
+	}
+	
+	/**
+	 * @see {@link Obs#getFormFieldNamespace()}
+	 */
+	@Test
+	@Verifies(value = "should return the correct namespace for a form field with a path", method = "getFormFieldNamespace()")
+	public void getFormFieldNamespace_shouldReturnTheCorrectNamespaceForAFormFieldWithAPath() throws Exception {
+		final String ns = "my ns";
+		final String path = "my path";
+		Obs obs = new Obs();
+		obs.setFormField(ns, path);
+		Assert.assertEquals(ns, obs.getFormFieldNamespace());
+	}
+	
+	/**
+	 * @see {@link Obs#getFormFieldNamespace()}
+	 */
+	@Test
+	@Verifies(value = "should return the namespace for a form field that has no path", method = "getFormFieldNamespace()")
+	public void getFormFieldNamespace_shouldReturnTheNamespaceForAFormFieldThatHasNoPath() throws Exception {
+		final String ns = "my ns";
+		Obs obs = new Obs();
+		obs.setFormField(ns, null);
+		Assert.assertEquals(ns, obs.getFormFieldNamespace());
+	}
+	
+	/**
+	 * @see {@link Obs#getFormFieldPath()}
+	 */
+	@Test
+	@Verifies(value = "should return null if the path is not specified", method = "getFormFieldPath()")
+	public void getFormFieldPath_shouldReturnNullIfThePathIsNotSpecified() throws Exception {
+		Obs obs = new Obs();
+		obs.setFormField("my ns", "");
+		Assert.assertNull(obs.getFormFieldPath());
+	}
+	
+	/**
+	 * @see {@link Obs#getFormFieldPath()}
+	 */
+	@Test
+	@Verifies(value = "should return the correct path for a form field with a namespace", method = "getFormFieldPath()")
+	public void getFormFieldPath_shouldReturnTheCorrectPathForAFormFieldWithANamespace() throws Exception {
+		final String ns = "my ns";
+		final String path = "my path";
+		Obs obs = new Obs();
+		obs.setFormField(ns, path);
+		Assert.assertEquals(path, obs.getFormFieldPath());
+	}
+	
+	/**
+	 * @see {@link Obs#getFormFieldPath()}
+	 */
+	@Test
+	@Verifies(value = "should return the path for a form field that has no namespace", method = "getFormFieldPath()")
+	public void getFormFieldPath_shouldReturnThePathForAFormFieldThatHasNoNamespace() throws Exception {
+		final String path = "my path";
+		Obs obs = new Obs();
+		obs.setFormField("", path);
+		Assert.assertEquals(path, obs.getFormFieldPath());
+	}
 }
