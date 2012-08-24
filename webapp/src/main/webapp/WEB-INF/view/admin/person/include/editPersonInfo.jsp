@@ -195,24 +195,3 @@
 	</c:if>
 </spring:bind>
 
-<tr>
-	<td><openmrs:message code="general.voided"/></td>
-	<td>${patient.voided}</td>
-</tr>
-
-<tr id="personVoidReasonRow" <c:if test="${patient.voided == false}">style="display: none"</c:if> >
-	<td><openmrs:message code="general.voidReason"/></td>
-	<td>${patient.voidReason}</td>
-</tr>
-
-<spring:bind path="voidedBy">
-	<c:if test="${status.value != null}" >
-		<tr>
-			<td><openmrs:message code="general.voidedBy"/></td>
-			<td>
-				${status.value.personName} -
-				<openmrs:formatDate path="dateVoided" type="long" />
-			</td>
-		</tr>
-	</c:if>
-</spring:bind>

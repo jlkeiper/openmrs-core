@@ -40,6 +40,7 @@ import org.openmrs.PatientIdentifierType;
 import org.openmrs.PatientIdentifierType.LocationBehavior;
 import org.openmrs.PersonAddress;
 import org.openmrs.PersonName;
+import org.openmrs.api.APIException;
 import org.openmrs.api.DuplicateIdentifierException;
 import org.openmrs.api.IdentifierNotUniqueException;
 import org.openmrs.api.InsufficientIdentifiersException;
@@ -267,13 +268,30 @@ public class PatientFormController extends PersonFormController {
 			String action = request.getParameter("action");
 			PatientService ps = Context.getPatientService();
 			
-			if (action.equals(msa.getMessage("Patient.delete"))) {
+			if (action.equals(msa.getMessage("Patient.unDelete"))) {
 				try {
-					ps.purgePatient(patient);
-					httpSession.setAttribute(WebConstants.OPENMRS_MSG_ATTR, "Patient.deleted");
-					return new ModelAndView(new RedirectView("index.htm"));
+					ps.unvoidPatient(patient);
+					httpSession.setAttribute(WebConstants.OPENMRS_MSG_ATTR, "Patient.unDeleted");
+					return new ModelAndView(new RedirectView(getSuccessView() + "?patientId="
+							+ patient.getPatientId().toString()));
+				} catch (APIException e) {
+					log.error(e);
+					httpSession.setAttribute(WebConstants.OPENMRS_ERROR_ATTR, "Patient.cannot.unDelete");
+					return new ModelAndView(new RedirectView(getSuccessView() + "?patientId="
+							+ patient.getPatientId().toString()));
 				}
-				catch (DataIntegrityViolationException e) {
+			} else if (action.equals(msa.getMessage("Patient.delete"))) {
+				try {
+					String reason = request.getParameter("deleteReason");
+					if (StringUtils.isBlank(reason)) {
+						errors.reject(msa.getMessage("general.deleteReason.empty"));
+						return showForm(request, response, errors);
+					}
+
+					ps.voidPatient(patient, reason);
+					return new ModelAndView(new RedirectView(getSuccessView() + "?patientId="
+							+ patient.getPatientId().toString()));
+				} catch (DataIntegrityViolationException e) {
 					log.error("Unable to delete patient because of database FK errors: " + patient, e);
 					httpSession.setAttribute(WebConstants.OPENMRS_ERROR_ATTR, "Patient.cannot.delete");
 					return new ModelAndView(new RedirectView(getSuccessView() + "?patientId="

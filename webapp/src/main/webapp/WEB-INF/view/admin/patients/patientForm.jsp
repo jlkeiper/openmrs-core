@@ -251,10 +251,18 @@
 </style>
 
 <h2><openmrs:message code="Patient.title"/></h2>
-
-<c:if test="${patient.voided}">
-	<div id="patientFormVoided" class="retiredMessage">
-		<div><openmrs:message code="Patient.voidedMessage"/></div>
+<form method="post" onSubmit="removeBlankData()">
+	
+<c:if test="${patient.patientId != null && patient.voided == true }">
+    <div id="patientFormVoided" class="retiredMessage" >
+ 		<div><spring:message code="Patient.voidedMessage"/></div>
+		<div>
+			<c:if test="${patient.voidedBy != null}" >
+				<spring:message code="general.byPerson"/> ${patient.voidedBy.personName} <spring:message code="general.onDate"/> <openmrs:formatDate path="patient.dateVoided" type="long" />
+			</c:if>
+			&nbsp;- ${patient.voidReason} &nbsp;&nbsp;		
+			<form action="" method="post"><input type="submit" value="<spring:message code="Patient.unDelete"/>" name="action" /> </form> 
+		</div>
 	</div>
 </c:if>
 
@@ -267,7 +275,8 @@
 <c:if test="${patient.patientId != null}">
 	<a href="${pageContext.request.contextPath}/patientDashboard.form?patientId=${patient.patientId}"><openmrs:message code="patientDashboard.viewDashboard"/></a>
 	|
-	<a href="${pageContext.request.contextPath}/admin/patients/mergePatients.form?patientId=${patient.patientId}"><openmrs:message code="Patient.mergeThis"/></a><br/><br/>
+	<a href="${pageContext.request.contextPath}/admin/patients/mergePatients.form?patientId=${patient.patientId}"><openmrs:message code="Patient.mergeThis"/></a>
+	<br/><br/>
 </c:if>
 
 <openmrs:hasPrivilege privilege="Delete Patients">
@@ -293,8 +302,6 @@
 		</c:forEach>
 	</div>
 </spring:hasBindErrors>
-
-<form method="post" onSubmit="removeBlankData()">
 
 	<h3><openmrs:message code="Patient.identifiers"/></h3>
 		<spring:hasBindErrors name="patient.identifiers">
@@ -411,40 +418,33 @@
 	
 	<input type="submit" name="action" id="saveButton" value='<openmrs:message code="Patient.save"/>' />
 	
+	&nbsp; &nbsp; &nbsp;
 	<c:if test="${patient.patientId != null}">
-	<openmrs:hasPrivilege privilege="Purge Patients">
+		<input type="button" name="action"  value='<spring:message code="general.cancel"/>' onclick="window.location='${pageContext.request.contextPath}/patientDashboard.form?patientId=${patient.patientId}';" />
+		</c:if>
 		&nbsp; &nbsp; &nbsp;
-		<span style="position: relative">
-			<input type="button" id="deletePatientButton" value="<openmrs:message code="Patient.delete"/>" onClick="showDiv('deletePatientDiv'); hideDiv('deletePatientButton')"/>
-			<div id="deletePatientDiv" style="position: absolute; padding: 1em; bottom: 0px; left: 0px; z-index: 9; width: 350px; border: 1px black solid; background-color: #ffff88; display: none">
-				<openmrs:message code="Patient.delete.warningMessage"/>
-				<br/><br/>
-				<div align="center">
-					<input type="submit" name="action" value="<openmrs:message code="Patient.delete"/>" onclick="return confirm('<openmrs:message code="Patient.delete.finalWarning"/>')"/>
-					&nbsp; &nbsp; &nbsp;
-					<input type="button" value="<openmrs:message code="general.cancel" />" onClick="showDiv('deletePatientButton'); hideDiv('deletePatientDiv')"/>
+		<c:if test="${patient.voided == false && patient.patientId != null}">
+			<span style="position: relative">
+				<input type="button" value="<spring:message code="Patient.delete" />" onClick="showDiv('deletePatientDiv'); hideDiv('deletePatient')" id="deletePatient"/>
+				<div id="deletePatientDiv" style="position: absolute; padding: 1em; bottom: 0px; left: 0px; z-index: 9; width: 425px; border: 1px black solid; background-color: #ffff88; display: none">
+					<openmrs:message code="Patient.delete.warningMessage"/>
+					<br/>
+					<b><spring:message code="general.reason"/>:</b>
+					<input type="text"  size="40" name="deleteReason"  />
+					<br/><br/>
+					<div align="center">
+						<input type="submit" name="action" value="<openmrs:message code="Patient.delete"/>" />
+						&nbsp; &nbsp; &nbsp;
+						<input type="button" value="<openmrs:message code="general.cancel" />" onClick="showDiv('deletePatientHref'); hideDiv('deletePatientDiv')"/>
+					</div>
 				</div>
-			</div>
-		</span>
-	</openmrs:hasPrivilege>
-</c:if>
-	
+			</span>
+		</c:if>
+		
 </form>
+
 <br/>
-<openmrs:hasPrivilege privilege="Delete Patients">
-	<c:if test="${patient.patientId != null && patient.voided == false}">
-	<form action="" method="post">
-		<fieldset>
-			<legend><h4><openmrs:message code="Patient.void"/></h4></legend>
-			<b><openmrs:message code="general.reason"/></b>
-			<input type="text" value="" size="50" name="voidReason" />
-			<br/><br/>
-			<input type="submit" value='<openmrs:message code="Patient.void"/>' name="action"/>
-		</fieldset>
-	</form>	
-	</c:if>
-</openmrs:hasPrivilege>
-	
+
 <script>
 	
 	var array = new Array(3);
