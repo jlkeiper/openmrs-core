@@ -122,7 +122,9 @@ public class Obs extends BaseOpenmrsData implements java.io.Serializable {
 	
 	private Obs previousVersion;
 	
-	public static final String FORM_PATH_SEPARATOR = "^";
+	private static final String FORM_NAMESPACE_PATH_SEPARATOR = "^";
+	
+	private static final int FORM_NAMESPACE_PATH_MAX_LENGTH = 255;
 	
 	/**
 	 * @since 1.10
@@ -1135,7 +1137,9 @@ public class Obs extends BaseOpenmrsData implements java.io.Serializable {
 	}
 	
 	/**
-	 * @return the formField
+	 * Gets the namespace for the form field that was used to capture the obs details in the form
+	 * 
+	 * @return the namespace
 	 * @since 1.10
 	 * @should return the namespace for a form field that has no path
 	 * @should return the correct namespace for a form field with a path
@@ -1145,16 +1149,18 @@ public class Obs extends BaseOpenmrsData implements java.io.Serializable {
 		if (StringUtils.isNotBlank(formNamespaceAndPath)) {
 			formNamespaceAndPath = formNamespaceAndPath.trim();
 			//Only the path was specified
-			if (formNamespaceAndPath.startsWith(FORM_PATH_SEPARATOR))
+			if (formNamespaceAndPath.startsWith(FORM_NAMESPACE_PATH_SEPARATOR))
 				return null;
-			return formNamespaceAndPath.substring(0, formNamespaceAndPath.indexOf(FORM_PATH_SEPARATOR));
+			return formNamespaceAndPath.substring(0, formNamespaceAndPath.indexOf(FORM_NAMESPACE_PATH_SEPARATOR));
 		}
 		
 		return formNamespaceAndPath;
 	}
 	
 	/**
-	 * @return the formField
+	 * Gets the path for the form field that was used to capture the obs details in the form
+	 * 
+	 * @return the the form field path
 	 * @since 1.10
 	 * @should return the path for a form field that has no namespace
 	 * @should return the correct path for a form field with a namespace
@@ -1164,25 +1170,46 @@ public class Obs extends BaseOpenmrsData implements java.io.Serializable {
 		if (StringUtils.isNotBlank(formNamespaceAndPath)) {
 			formNamespaceAndPath = formNamespaceAndPath.trim();
 			//Only the namespace was specified
-			if (formNamespaceAndPath.endsWith(FORM_PATH_SEPARATOR))
+			if (formNamespaceAndPath.endsWith(FORM_NAMESPACE_PATH_SEPARATOR))
 				return null;
-			return formNamespaceAndPath.substring(formNamespaceAndPath.indexOf(FORM_PATH_SEPARATOR) + 1);
+			return formNamespaceAndPath.substring(formNamespaceAndPath.indexOf(FORM_NAMESPACE_PATH_SEPARATOR) + 1);
 		}
 		
 		return formNamespaceAndPath;
 	}
 	
 	/**
-	 * @param formNamespaceAndPath the formField to set
+	 * Sets the namespace and path of the form field that was used to capture the obs details in the
+	 * form.<br>
+	 * <b>Note:</b> Namespace and formFieldPath together must not exceed 254 characters in length,
+	 * form applications can subtract the length of their namespace from 254 to determine the
+	 * maximum length they can use for a form field path.
+	 * 
+	 * @param namespace the namespace of the form field
+	 * @param formFieldPath the path of the form field
 	 * @since 1.10
 	 * @should set the underlying formNamespaceAndPath in the correct pattern
+	 * @should reject a namepace containing the separator
+	 * @should reject a path containing the separator
+	 * @should reject a namepace and path combination longer than the max length
 	 */
 	public void setFormField(String namespace, String formFieldPath) {
+		if (namespace == null && formFieldPath == null)
+			return;
+		
+		String nsAndPathTemp = "";
 		if (StringUtils.isNotBlank(namespace) && StringUtils.isNotBlank(formFieldPath))
-			formNamespaceAndPath = namespace + FORM_PATH_SEPARATOR + formFieldPath;
+			nsAndPathTemp = namespace + FORM_NAMESPACE_PATH_SEPARATOR + formFieldPath;
 		else if (StringUtils.isNotBlank(namespace))
-			formNamespaceAndPath = namespace + FORM_PATH_SEPARATOR;
+			nsAndPathTemp = namespace + FORM_NAMESPACE_PATH_SEPARATOR;
 		else if (StringUtils.isNotBlank(formFieldPath))
-			formNamespaceAndPath = FORM_PATH_SEPARATOR + formFieldPath;
+			nsAndPathTemp = FORM_NAMESPACE_PATH_SEPARATOR + formFieldPath;
+		
+		if (nsAndPathTemp.length() > FORM_NAMESPACE_PATH_MAX_LENGTH)
+			throw new APIException(Context.getMessageSourceService().getMessage(""));
+		if (StringUtils.countMatches(nsAndPathTemp, FORM_NAMESPACE_PATH_SEPARATOR) > 1)
+			throw new APIException(Context.getMessageSourceService().getMessage(""));
+		
+		formNamespaceAndPath = nsAndPathTemp;
 	}
 }
