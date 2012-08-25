@@ -38,6 +38,8 @@ import org.openmrs.test.Verifies;
  */
 public class ObsTest {
 	
+	private static final String FORM_NAMESPACE_PATH_SEPARATOR = "^";
+	
 	/**
 	 * Tests the addToGroup method in ObsGroup
 	 * 
@@ -361,7 +363,7 @@ public class ObsTest {
 		obs.setFormField(ns, path);
 		java.lang.reflect.Field formNamespaceAndPathProperty = Obs.class.getDeclaredField("formNamespaceAndPath");
 		formNamespaceAndPathProperty.setAccessible(true);
-		Assert.assertEquals(ns + Obs.FORM_PATH_SEPARATOR + path, formNamespaceAndPathProperty.get(obs));
+		Assert.assertEquals(ns + FORM_NAMESPACE_PATH_SEPARATOR + path, formNamespaceAndPathProperty.get(obs));
 	}
 	
 	/**
@@ -434,5 +436,48 @@ public class ObsTest {
 		Obs obs = new Obs();
 		obs.setFormField("", path);
 		Assert.assertEquals(path, obs.getFormFieldPath());
+	}
+	
+	/**
+	 * @see {@link Obs#setFormField(String,String)}
+	 */
+	@Test(expected = APIException.class)
+	@Verifies(value = "should reject a namepace and path combination longer than the max length", method = "setFormField(String,String)")
+	public void setFormField_shouldRejectANamepaceAndPathCombinationLongerThanTheMaxLength() throws Exception {
+		StringBuffer nsBuffer = new StringBuffer(125);
+		for (int i = 0; i < 125; i++) {
+			nsBuffer.append("n");
+		}
+		StringBuffer pathBuffer = new StringBuffer(130);
+		for (int i = 0; i < 130; i++) {
+			nsBuffer.append("p");
+		}
+		
+		final String ns = nsBuffer.toString();
+		final String path = pathBuffer.toString();
+		Obs obs = new Obs();
+		obs.setFormField(ns, path);
+	}
+	
+	/**
+	 * @see {@link Obs#setFormField(String,String)}
+	 */
+	@Test(expected = APIException.class)
+	@Verifies(value = "should reject a namepace containing the separator", method = "setFormField(String,String)")
+	public void setFormField_shouldRejectANamepaceContainingTheSeparator() throws Exception {
+		final String ns = "my ns" + FORM_NAMESPACE_PATH_SEPARATOR;
+		Obs obs = new Obs();
+		obs.setFormField(ns, "");
+	}
+	
+	/**
+	 * @see {@link Obs#setFormField(String,String)}
+	 */
+	@Test(expected = APIException.class)
+	@Verifies(value = "should reject a path containing the separator", method = "setFormField(String,String)")
+	public void setFormField_shouldRejectAPathContainingTheSeparator() throws Exception {
+		final String path = FORM_NAMESPACE_PATH_SEPARATOR + "my path";
+		Obs obs = new Obs();
+		obs.setFormField("", path);
 	}
 }
