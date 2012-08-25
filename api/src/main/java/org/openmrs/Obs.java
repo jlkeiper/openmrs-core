@@ -1206,9 +1206,9 @@ public class Obs extends BaseOpenmrsData implements java.io.Serializable {
 			nsAndPathTemp = FORM_NAMESPACE_PATH_SEPARATOR + formFieldPath;
 		
 		if (nsAndPathTemp.length() > FORM_NAMESPACE_PATH_MAX_LENGTH)
-			throw new APIException(Context.getMessageSourceService().getMessage(""));
+			throw new APIException(Context.getMessageSourceService().getMessage("Obs.namespaceAndPathTooLong"));
 		if (StringUtils.countMatches(nsAndPathTemp, FORM_NAMESPACE_PATH_SEPARATOR) > 1)
-			throw new APIException(Context.getMessageSourceService().getMessage(""));
+			throw new APIException(Context.getMessageSourceService().getMessage("Obs.namespaceAndPathNotContainSeparator"));
 		
 		formNamespaceAndPath = nsAndPathTemp;
 	}
