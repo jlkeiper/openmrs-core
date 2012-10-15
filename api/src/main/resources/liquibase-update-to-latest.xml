@@ -7378,5 +7378,17 @@
                                  referencedTableName="concept" referencedColumnNames="concept_id" />
     </changeSet>
 	
+	<changeSet id="20120824-1110" author="wyclif">
+		<preConditions onFail="MARK_RAN">
+			<not>
+				<columnExists tableName="obs" columnName="form_namespace_and_path" />
+			</not>
+		</preConditions>
+		<comment>Adding form_namespace_and_path column to obs table</comment>
+		<addColumn tableName="obs">
+			<column name="form_namespace_and_path" type="varchar(255)" />
+		</addColumn>
+	</changeSet>
+	
 </databaseChangeLog>
 

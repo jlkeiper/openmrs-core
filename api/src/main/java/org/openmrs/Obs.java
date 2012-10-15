@@ -47,18 +47,16 @@ import org.openmrs.util.Format.FORMAT_TYPE;
  * The {@link #getObsGroup()} method returns an optional parent. That parent object is also an Obs.
  * The parent Obs object knows about its child objects through the {@link #getGroupMembers()}
  * method. (Multi-level hierarchies are achieved by an Obs parent object being a member of another
- * Obs (grand)parent object) Read up on the obs table: http://openmrs.org/wiki/Obs_Table_Primer
+ * Obs (grand)parent object) Read up on the obs table: http://openmrs.org/wiki/Obs_Table_Primer In
+ * an OpenMRS installation, there may be an occasion need to change an Obs. For example, a site may
+ * decide to replace a concept in the dictionary with a more specific set of concepts. An
+ * observation is part of the official record of an encounter. There may be legal, ethical, and
+ * auditing consequences from altering a record. It is recommended that you create a new Obs and
+ * void the old one: Obs newObs = Obs.newInstance(oldObs); //copies values from oldObs
+ * newObs.setPreviousVersion(oldObs);
+ * Context.getObsService().saveObs(newObs,"Your reason for the change here");
+ * Context.getObsService().voidObs(oldObs, "Your reason for the change here");
  * 
- * In an OpenMRS installation, there may be an occasion need to change an Obs. 
- * For example, a site may decide to replace a concept in the dictionary with a more specific
- * set of concepts. An observation is part of the official record of an encounter. There may 
- * be legal, ethical, and auditing consequences from altering a record. It is recommended
- * that you create a new Obs and void the old one:
- *      Obs newObs = Obs.newInstance(oldObs); //copies values from oldObs
- *      newObs.setPreviousVersion(oldObs);
- *      Context.getObsService().saveObs(newObs,"Your reason for the change here");
- *      Context.getObsService().voidObs(oldObs, "Your reason for the change here");
- *
  * @see Encounter
  */
 public class Obs extends BaseOpenmrsData implements java.io.Serializable {
@@ -123,6 +121,15 @@ public class Obs extends BaseOpenmrsData implements java.io.Serializable {
 	protected Encounter encounter;
 	
 	private Obs previousVersion;
+	
+	private static final String FORM_NAMESPACE_PATH_SEPARATOR = "^";
+	
+	private static final int FORM_NAMESPACE_PATH_MAX_LENGTH = 255;
+	
+	/**
+	 * @since 1.10
+	 */
+	private String formNamespaceAndPath;
 	
 	/** default constructor */
 	public Obs() {
@@ -343,10 +350,10 @@ public class Obs extends BaseOpenmrsData implements java.io.Serializable {
 	}
 	
 	/**
-	 * Convenience method that checks for if this obs has 1 or more group members (either voided or non-voided)
-	 * Note this method differs from hasGroupMembers(), as that method excludes voided obs; logic is that
-	 * while a obs that has only voided group members should be seen as "having no group members" it
-	 * still should be considered an "obs grouping"
+	 * Convenience method that checks for if this obs has 1 or more group members (either voided or
+	 * non-voided) Note this method differs from hasGroupMembers(), as that method excludes voided
+	 * obs; logic is that while a obs that has only voided group members should be seen as
+	 * "having no group members" it still should be considered an "obs grouping"
 	 * <p>
 	 * NOTE: This method could also be called "isObsGroup" for a little less confusion on names.
 	 * However, jstl in a web layer (or any psuedo-getter) access isn't good with both an
@@ -856,8 +863,7 @@ public class Obs extends BaseOpenmrsData implements java.io.Serializable {
 	/**
 	 * Set the ComplexData for this Obs. The ComplexData is stored in the file system or elsewhere,
 	 * but is not persisted to the database. <br/>
-	 * <br/>
-	 * {@link ComplexObsHandler}s that are registered to {@link ConceptComplex}s will persist the
+	 * <br/> {@link ComplexObsHandler}s that are registered to {@link ConceptComplex}s will persist the
 	 * {@link ComplexData#getData()} object to the correct place for the given concept.
 	 * 
 	 * @param complexData
@@ -1110,8 +1116,8 @@ public class Obs extends BaseOpenmrsData implements java.io.Serializable {
 	
 	/**
 	 * When ObsService updates an obs, it voids the old version, creates a new Obs with the updates,
-	 * and adds a reference to the previousVersion in the new Obs. 
-	 * getPreviousVersion returns the last version of this Obs. 
+	 * and adds a reference to the previousVersion in the new Obs. getPreviousVersion returns the
+	 * last version of this Obs.
 	 */
 	public Obs getPreviousVersion() {
 		return previousVersion;
@@ -1119,6 +1125,7 @@ public class Obs extends BaseOpenmrsData implements java.io.Serializable {
 	
 	/**
 	 * A previousVersion indicates that this Obs replaces an earlier one.
+	 * 
 	 * @param previousVersion the Obs that this Obs superceeds
 	 */
 	public void setPreviousVersion(Obs previousVersion) {
@@ -1129,4 +1136,80 @@ public class Obs extends BaseOpenmrsData implements java.io.Serializable {
 		return getPreviousVersion() != null;
 	}
 	
+	/**
+	 * Gets the namespace for the form field that was used to capture the obs details in the form
+	 * 
+	 * @return the namespace
+	 * @since 1.10
+	 * @should return the namespace for a form field that has no path
+	 * @should return the correct namespace for a form field with a path
+	 * @should return null if the namespace is not specified
+	 */
+	public String getFormFieldNamespace() {
+		if (StringUtils.isNotBlank(formNamespaceAndPath)) {
+			formNamespaceAndPath = formNamespaceAndPath.trim();
+			//Only the path was specified
+			if (formNamespaceAndPath.startsWith(FORM_NAMESPACE_PATH_SEPARATOR))
+				return null;
+			return formNamespaceAndPath.substring(0, formNamespaceAndPath.indexOf(FORM_NAMESPACE_PATH_SEPARATOR));
+		}
+		
+		return formNamespaceAndPath;
+	}
+	
+	/**
+	 * Gets the path for the form field that was used to capture the obs details in the form
+	 * 
+	 * @return the the form field path
+	 * @since 1.10
+	 * @should return the path for a form field that has no namespace
+	 * @should return the correct path for a form field with a namespace
+	 * @should return null if the path is not specified
+	 */
+	public String getFormFieldPath() {
+		if (StringUtils.isNotBlank(formNamespaceAndPath)) {
+			formNamespaceAndPath = formNamespaceAndPath.trim();
+			//Only the namespace was specified
+			if (formNamespaceAndPath.endsWith(FORM_NAMESPACE_PATH_SEPARATOR))
+				return null;
+			return formNamespaceAndPath.substring(formNamespaceAndPath.indexOf(FORM_NAMESPACE_PATH_SEPARATOR) + 1);
+		}
+		
+		return formNamespaceAndPath;
+	}
+	
+	/**
+	 * Sets the namespace and path of the form field that was used to capture the obs details in the
+	 * form.<br>
+	 * <b>Note:</b> Namespace and formFieldPath together must not exceed 254 characters in length,
+	 * form applications can subtract the length of their namespace from 254 to determine the
+	 * maximum length they can use for a form field path.
+	 * 
+	 * @param namespace the namespace of the form field
+	 * @param formFieldPath the path of the form field
+	 * @since 1.10
+	 * @should set the underlying formNamespaceAndPath in the correct pattern
+	 * @should reject a namepace containing the separator
+	 * @should reject a path containing the separator
+	 * @should reject a namepace and path combination longer than the max length
+	 */
+	public void setFormField(String namespace, String formFieldPath) {
+		if (namespace == null && formFieldPath == null)
+			return;
+		
+		String nsAndPathTemp = "";
+		if (StringUtils.isNotBlank(namespace) && StringUtils.isNotBlank(formFieldPath))
+			nsAndPathTemp = namespace + FORM_NAMESPACE_PATH_SEPARATOR + formFieldPath;
+		else if (StringUtils.isNotBlank(namespace))
+			nsAndPathTemp = namespace + FORM_NAMESPACE_PATH_SEPARATOR;
+		else if (StringUtils.isNotBlank(formFieldPath))
+			nsAndPathTemp = FORM_NAMESPACE_PATH_SEPARATOR + formFieldPath;
+		
+		if (nsAndPathTemp.length() > FORM_NAMESPACE_PATH_MAX_LENGTH)
+			throw new APIException(Context.getMessageSourceService().getMessage("Obs.namespaceAndPathTooLong"));
+		if (StringUtils.countMatches(nsAndPathTemp, FORM_NAMESPACE_PATH_SEPARATOR) > 1)
+			throw new APIException(Context.getMessageSourceService().getMessage("Obs.namespaceAndPathNotContainSeparator"));
+		
+		formNamespaceAndPath = nsAndPathTemp;
+	}
 }
