@@ -805,6 +805,8 @@ public final class OpenmrsConstants {
 	
 	public static final String GLOBAL_PROPERTY_IMPLEMENTATION_ID = "implementation_id";
 	
+	public static final String GLOBAL_PROPERTY_NEWPATIENTFORM_SHOW_RELATIONSHIPS = "new_patient_form.showRelationships";
+	
 	public static final String GLOBAL_PROPERTY_NEWPATIENTFORM_RELATIONSHIPS = "newPatientForm.relationships";
 	
 	public static final String GLOBAL_PROPERTY_COMPLEX_OBS_DIR = "obs.complex_obs_dir";
@@ -972,6 +974,11 @@ public final class OpenmrsConstants {
 	public static final String GP_DASHBOARD_MAX_NUMBER_OF_ENCOUNTERS_TO_SHOW = "dashboard.encounters.maximumNumberToShow";
 	
 	/**
+	 * Global property name to display program, workflow and states in a specific case
+	 */
+	public static final String GP_DASHBOARD_METADATA_CASE_CONVERSION = "dashboard.metadata.caseConversion";
+	
+	/**
 	 * Global property name for the default ConceptMapType which is set automatically when no other
 	 * is set manually.
 	 */
@@ -1007,7 +1014,7 @@ public final class OpenmrsConstants {
 	/**
 	 * Global property name for the visit type(s) to automatically close
 	 */
-	public static final String GP_VISIT_TYPES_TO_AUTO_CLOSE = "autoCloseVisits.visitType";
+	public static final String GP_VISIT_TYPES_TO_AUTO_CLOSE = "visits.autoCloseVisitType";
 	
 	/**
 	 * The name of the scheduled task that automatically stops the active visits
@@ -1036,7 +1043,7 @@ public final class OpenmrsConstants {
 		        "Indicates whether or not mother's name is able to be added/viewed for a patient", BooleanDatatype.class,
 		        null));
 		
-		props.add(new GlobalProperty("new_patient_form.showRelationships", "false",
+		props.add(new GlobalProperty(GLOBAL_PROPERTY_NEWPATIENTFORM_SHOW_RELATIONSHIPS, "false",
 		        "true/false whether or not to show the relationship editor on the addPatient.htm screen",
 		        BooleanDatatype.class, null));
 		
@@ -1448,6 +1455,11 @@ public final class OpenmrsConstants {
 		                GP_CASE_SENSITIVE_NAMES_IN_CONCEPT_NAME_TABLE,
 		                "true",
 		                "Indicates whether names in the concept_name table are case sensitive or not. Setting this to false for MySQL with a case insensitive collation improves search performance."));
+		props
+		        .add(new GlobalProperty(
+		                GP_DASHBOARD_METADATA_CASE_CONVERSION,
+		                "",
+		                "Indicates which type automatic case conversion is applied to program/workflow/state in the patient dashboard. Valid values: lowercase, uppercase, capitalize. If empty no conversion is applied."));
 		
 		for (GlobalProperty gp : ModuleFactory.getGlobalProperties()) {
 			props.add(gp);
