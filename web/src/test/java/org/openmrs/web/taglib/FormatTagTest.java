@@ -128,7 +128,7 @@ public class FormatTagTest extends BaseContextSensitiveTest {
 		checkStartTagEvaluation(pageContext, tag, Context.getLocationService().getLocation(1), "Unknown Location");
 		
 		// check if program is properly printed
-		checkStartTagEvaluation(pageContext, tag, Context.getProgramWorkflowService().getProgram(1), "HIV Program");
+		checkStartTagEvaluation(pageContext, tag, Context.getProgramWorkflowService().getProgram(1), "HIV PROGRAM");
 		
 		// check if visit is properly printed
 		checkStartTagEvaluation(pageContext, tag, Context.getVisitService().getVisit(1),
@@ -153,6 +153,6 @@ public class FormatTagTest extends BaseContextSensitiveTest {
 		tag.setObject(object);
 		Assert.assertEquals(Tag.SKIP_BODY, tag.doStartTag());
 		Assert.assertNotNull(pageContext.getAttribute(ATTRIBUTE_OBJECT_VALUE));
-		Assert.assertEquals(pageContext.getAttribute(ATTRIBUTE_OBJECT_VALUE), expected);
+		Assert.assertEquals(expected, pageContext.getAttribute(ATTRIBUTE_OBJECT_VALUE));
 	}
 }

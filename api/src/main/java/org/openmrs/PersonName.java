@@ -498,11 +498,7 @@ public class PersonName extends BaseOpenmrsData implements java.io.Serializable,
 	 */
 	@Override
 	public String toString() {
-		// TODO find all uses of this toString() method and 
-		// change them to use the getFullName() method.  This
-		// to string should print out the #getPersonNameId() and 
-		// all of the values for each part
-		
+		//This should not be changed due to extensive usage in UI.
 		return getFullName();
 	}
 	
