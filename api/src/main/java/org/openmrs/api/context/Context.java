@@ -748,6 +748,27 @@ public class Context {
 	}
 	
 	/**
+	 * Used to define a unit of work which does not require clearing out the currently authenticated user. 
+	 * Remember to call closeSessionWithCurrentUser in a, preferably, finally block after this work.
+	 * 
+	 * @since 1.10
+	 */
+	public static void openSessionWithCurrentUser() {
+		getContextDAO().openSession();
+	}
+	
+	/**
+	 * Used when the a unit of work which started with a call for openSessionWithCurrentUser has finished.
+	 * This should be in a, preferably, finally block.
+	 * 
+	 * @since 1.10
+	 */
+	public static void closeSessionWithCurrentUser() {
+		getContextDAO().closeSession();
+		;
+	}
+	
+	/**
 	 * Clears cached changes made so far during this unit of work without writing them to the
 	 * database. If you call this method, and later call closeSession() or flushSession() your
 	 * changes are still lost.
@@ -1279,5 +1300,21 @@ public class Context {
 		Properties props = new Properties();
 		props.putAll(configProperties);
 		return props;
+	}
+	
+	/**
+	 * @see org.openmrs.api.context.ServiceContext#setUseSystemClassLoader(boolean)
+	 * @since 1.10
+	 */
+	public static void setUseSystemClassLoader(boolean useSystemClassLoader) {
+		getServiceContext().setUseSystemClassLoader(useSystemClassLoader);
+	}
+	
+	/**
+	 * @see org.openmrs.api.context.ServiceContext#isUseSystemClassLoader()
+	 * @since 1.10
+	 */
+	public static boolean isUseSystemClassLoader() {
+		return getServiceContext().isUseSystemClassLoader();
 	}
 }

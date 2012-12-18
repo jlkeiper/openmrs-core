@@ -81,6 +81,7 @@ import org.springframework.validation.Errors;
  * @see org.openmrs.api.AdministrationService
  * @see org.openmrs.api.context.Context
  */
+@Transactional
 public class AdministrationServiceImpl extends BaseOpenmrsService implements AdministrationService, GlobalPropertyListener {
 	
 	protected Log log = LogFactory.getLog(getClass());
@@ -519,22 +520,6 @@ public class AdministrationServiceImpl extends BaseOpenmrsService implements Adm
 	@Deprecated
 	public void updateConceptWords(Integer conceptIdStart, Integer conceptIdEnd) throws APIException {
 		Context.getConceptService().updateConceptWords(conceptIdStart, conceptIdEnd);
-	}
-	
-	/**
-	 * @deprecated moved to ConceptService
-	 */
-	@Deprecated
-	public void updateConceptSetDerived(Concept concept) throws APIException {
-		Context.getConceptService().updateConceptSetDerived(concept);
-	}
-	
-	/**
-	 * @deprecated moved to ConceptService
-	 */
-	@Deprecated
-	public void updateConceptSetDerived() throws APIException {
-		Context.getConceptService().updateConceptSetDerived();
 	}
 	
 	/**

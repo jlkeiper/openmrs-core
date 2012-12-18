@@ -392,13 +392,17 @@ public class ModuleUtil {
 	 * Gets the folder where modules are stored. ModuleExceptions are thrown on errors
 	 * 
 	 * @return folder containing modules
+	 * @should use the runtime property as the first choice if specified
+	 * @should return the correct file if the runtime property is an absolute path
 	 */
 	public static File getModuleRepository() {
 		
-		AdministrationService as = Context.getAdministrationService();
-		String folderName = as.getGlobalProperty(ModuleConstants.REPOSITORY_FOLDER_PROPERTY,
-		    ModuleConstants.REPOSITORY_FOLDER_PROPERTY_DEFAULT);
-		
+		String folderName = Context.getRuntimeProperties().getProperty(ModuleConstants.REPOSITORY_FOLDER_RUNTIME_PROPERTY);
+		if (StringUtils.isBlank(folderName)) {
+			AdministrationService as = Context.getAdministrationService();
+			folderName = as.getGlobalProperty(ModuleConstants.REPOSITORY_FOLDER_PROPERTY,
+			    ModuleConstants.REPOSITORY_FOLDER_PROPERTY_DEFAULT);
+		}
 		// try to load the repository folder straight away.
 		File folder = new File(folderName);
 		
@@ -573,11 +577,12 @@ public class ModuleUtil {
 	}
 	
 	/**
-	 * Convenience method to follow http to https redirects.  Will follow a total of 5 redirects, 
+	 * Convenience method to follow http to https redirects. Will follow a total of 5 redirects,
 	 * then fail out due to foolishness on the url's part.
 	 * 
 	 * @param c the {@link URLConnection} to open
-	 * @return an {@link InputStream} that is not necessarily at the same url, possibly at a 403 redirect.
+	 * @return an {@link InputStream} that is not necessarily at the same url, possibly at a 403
+	 *         redirect.
 	 * @throws IOException
 	 * @see {@link #getURLStream(URL)}
 	 */
@@ -792,23 +797,36 @@ public class ModuleUtil {
 		if (log.isDebugEnabled())
 			log.debug("Reloading advice for all started modules: " + ModuleFactory.getStartedModules().size());
 		
-		for (Module module : ModuleFactory.getStartedModules()) {
-			ModuleFactory.loadAdvice(module);
-			try {
-				if (module.getModuleActivator() != null) {
-					module.getModuleActivator().contextRefreshed();
-					//if it is system start up, call the started method for all started modules
-					if (isOpenmrsStartup)
-						module.getModuleActivator().started();
-					//if refreshing the context after a user started or uploaded a new module
-					else if (!isOpenmrsStartup && module.equals(startedModule))
-						module.getModuleActivator().started();
+		try {
+			//The call backs in this block may need lazy loading of objects
+			//which will fail because we use an OpenSessionInViewFilter whose opened session
+			//was closed when the application context was refreshed as above.
+			//So we need to open another session now. TRUNK-3739
+			Context.openSessionWithCurrentUser();
+			
+			for (Module module : ModuleFactory.getStartedModules()) {
+				ModuleFactory.loadAdvice(module);
+				try {
+					ModuleFactory.passDaemonToken(module);
+					
+					if (module.getModuleActivator() != null) {
+						module.getModuleActivator().contextRefreshed();
+						//if it is system start up, call the started method for all started modules
+						if (isOpenmrsStartup)
+							module.getModuleActivator().started();
+						//if refreshing the context after a user started or uploaded a new module
+						else if (!isOpenmrsStartup && module.equals(startedModule))
+							module.getModuleActivator().started();
+					}
+					
 				}
-				
+				catch (Throwable t) {
+					log.warn("Unable to invoke method on the module's activator ", t);
+				}
 			}
-			catch (Throwable t) {
-				log.warn("Unable to invoke method on the module's activator ", t);
-			}
+		}
+		finally {
+			Context.closeSessionWithCurrentUser();
 		}
 		
 		return ctx;

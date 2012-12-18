@@ -71,6 +71,7 @@ import org.openmrs.scheduler.TaskDefinition;
 import org.openmrs.util.OpenmrsConstants;
 import org.openmrs.util.OpenmrsUtil;
 import org.openmrs.validator.ConceptValidator;
+import org.openmrs.validator.ValidateUtil;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.BindException;
@@ -928,22 +929,6 @@ public class ConceptServiceImpl extends BaseOpenmrsService implements ConceptSer
 	}
 	
 	/**
-	 * @see org.openmrs.api.ConceptService#updateConceptSetDerived(org.openmrs.Concept)
-	 */
-	public void updateConceptSetDerived(Concept concept) throws APIException {
-		checkIfLocked();
-		dao.updateConceptSetDerived(concept);
-	}
-	
-	/**
-	 * @see org.openmrs.api.ConceptService#updateConceptSetDerived()
-	 */
-	public void updateConceptSetDerived() throws APIException {
-		checkIfLocked();
-		dao.updateConceptSetDerived();
-	}
-	
-	/**
 	 * @see org.openmrs.api.ConceptService#getConceptSets(org.openmrs.Concept)
 	 * @deprecated use {@link #getConceptSetsByConcept(Concept)}
 	 */
@@ -1083,6 +1068,7 @@ public class ConceptServiceImpl extends BaseOpenmrsService implements ConceptSer
 		if (mappedConcept == null)
 			throw new APIException("Illegal Mapped Concept");
 		
+		ConceptName conceptName = null;
 		if (cp.getState().equals(OpenmrsConstants.CONCEPT_PROPOSAL_CONCEPT) || !StringUtils.hasText(cp.getFinalText())) {
 			cp.setState(OpenmrsConstants.CONCEPT_PROPOSAL_CONCEPT);
 			cp.setFinalText("");
@@ -1091,7 +1077,7 @@ public class ConceptServiceImpl extends BaseOpenmrsService implements ConceptSer
 			checkIfLocked();
 			
 			String finalText = cp.getFinalText();
-			ConceptName conceptName = new ConceptName(finalText, null);
+			conceptName = new ConceptName(finalText, null);
 			conceptName.setConcept(mappedConcept);
 			conceptName.setLocale(locale == null ? Context.getLocale() : locale);
 			conceptName.setDateCreated(new Date());
@@ -1102,6 +1088,7 @@ public class ConceptServiceImpl extends BaseOpenmrsService implements ConceptSer
 			mappedConcept.addName(conceptName);
 			mappedConcept.setChangedBy(Context.getAuthenticatedUser());
 			mappedConcept.setDateChanged(new Date());
+			ValidateUtil.validate(mappedConcept);
 			updateConceptWord(mappedConcept);
 		}
 		
@@ -1112,6 +1099,8 @@ public class ConceptServiceImpl extends BaseOpenmrsService implements ConceptSer
 			ob.setEncounter(cp.getEncounter());
 			ob.setConcept(cp.getObsConcept());
 			ob.setValueCoded(cp.getMappedConcept());
+			if (cp.getState().equals(OpenmrsConstants.CONCEPT_PROPOSAL_SYNONYM))
+				ob.setValueCodedName(conceptName);
 			ob.setCreator(Context.getAuthenticatedUser());
 			ob.setDateCreated(new Date());
 			ob.setObsDatetime(cp.getEncounter().getEncounterDatetime());

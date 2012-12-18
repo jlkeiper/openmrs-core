@@ -18,6 +18,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
 
@@ -656,6 +657,7 @@ public class UserServiceImpl extends BaseOpenmrsService implements UserService {
 	 * @see UserService#notifyPrivilegeListeners(User, String, boolean)
 	 */
 	@Override
+	@Transactional(readOnly = true)
 	public void notifyPrivilegeListeners(User user, String privilege, boolean hasPrivilege) {
 		if (privilegeListeners != null) {
 			for (PrivilegeListener privilegeListener : privilegeListeners) {
@@ -667,6 +669,29 @@ public class UserServiceImpl extends BaseOpenmrsService implements UserService {
 				}
 			}
 		}
+	}
+	
+	@Override
+	public User saveUserProperty(String key, String value) {
+		User user = Context.getAuthenticatedUser();
+		if (user == null) {
+			throw new APIException("No Authenticated user found");
+		}
+		user.setUserProperty(key, value);
+		return dao.saveUser(user, null);
+	}
+	
+	@Override
+	public User saveUserProperties(Map<String, String> properties) {
+		User user = Context.getAuthenticatedUser();
+		if (user == null) {
+			throw new APIException("No Authenticated user found");
+		}
+		user.getUserProperties().clear();
+		for (String key : properties.keySet()) {
+			user.setUserProperty(key, properties.get(key));
+		}
+		return dao.saveUser(user, null);
 	}
 	
 }
