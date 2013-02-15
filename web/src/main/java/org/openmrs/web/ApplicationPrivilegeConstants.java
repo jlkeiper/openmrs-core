@@ -49,6 +49,7 @@ public class ApplicationPrivilegeConstants {
 	
 	@AddOnStartup(description = "Able to view the 'Visits' tab on the patient dashboard")
 	public static final String DASHBOARD_VISITS = "Patient Dashboard - View Visits Section";
+
 	@AddOnStartup(description = "Able to view the 'Patient Flags' portlet on the patient dashboard's overview tab")
 	public static final String PATIENT_OVERVIEW_PATIENT_FLAGS = "Patient Overview - View Patient Flags";
 	
