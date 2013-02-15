@@ -73,15 +73,15 @@
 		if (currentProgramBeingEdited == null)
 			return;
 		var idToSave = currentProgramBeingEdited;
-		var startDate = parseDate($('enrollmentDateElement').value);
-		var endDate = parseDate($('completionDateElement').value);
-		var locationId = $('programLocationElement').value;
-		var outcomeId = $('programOutcomeConceptElement').value;
+		var startDate = parseDate(jQuery('#enrollmentDateElement').val());
+		var endDate = parseDate(jQuery('#completionDateElement').val());
+		var locationId = jQuery('#programLocationElement').val();
+		var outcomeId = jQuery('#programOutcomeConceptElement').val();
 		if (endDate != '' && !$j('#editProgramOutcomeRow').is(':hidden')
 				&& outcomeId == '') {
-			alert("<spring:message code="PatientProgram.error.outcomeRequired" />");
+			alert("<openmrs:message code="PatientProgram.error.outcomeRequired" />");
 		} else if (!isEmpty(startDate) && startDate > endDate && !isEmpty(endDate)) {
-			alert('<spring:message code="Program.error.invalidDate" javaScriptEscape="true"/>');
+			alert('<openmrs:message code="Program.error.invalidDate" javaScriptEscape="true"/>');
 		} else {
 			currentProgramBeingEdited = null;
 			DWRProgramWorkflowService.updatePatientProgram(idToSave, formatDate(startDate, 'yyyy-mm-dd'),
@@ -110,27 +110,27 @@
 
 		var ppId = patientProgramForWorkflowEdited;
 		var wfId = currentWorkflowBeingEdited;
-		var stateId = $('changeToState').value;
-		var onDate = parseDate($('changeStateOnDate').value);
-		var lastStateStartDate = parseDate($('lastStateStartDate').value);
-		var lastStateEndDate = parseDate($('lastStateEndDate').value);
-		var lastState = $('lastState').value;
+		var stateId = jQuery('#changeToState').val();
+		var onDate = parseDate(jQuery('#changeStateOnDate').val());
+		var lastStateStartDate = parseDate(jQuery('#lastStateStartDate').val());
+		var lastStateEndDate = parseDate(jQuery('#lastStateEndDate').val());
+		var lastState = jQuery('#lastState').val();
 
 		if (isEmpty(stateId)) {
-			alert('<spring:message code="State.error.noState" javaScriptEscape="true"/>');
+			alert('<openmrs:message code="State.error.noState" javaScriptEscape="true"/>');
 			return;
 		}
 		if (!isEmpty(lastState)) {
 			if (isEmpty(onDate)) {
-				alert('<spring:message code="State.error.noDate" javaScriptEscape="true"/>');
+				alert('<openmrs:message code="State.error.noDate" javaScriptEscape="true"/>');
 				return;
 			}
 			if (!isEmpty(lastStateStartDate) && lastStateStartDate > onDate) {
-				alert('<spring:message code="State.error.invalidDate" javaScriptEscape="true"/>');
+				alert('<openmrs:message code="State.error.invalidDate" javaScriptEscape="true"/>');
 				return;
 			}
 			if (!isEmpty(lastStateEndDate)) {
-				alert('<spring:message code="State.error.invalidChangeState" javaScriptEscape="true"/>');
+				alert('<openmrs:message code="State.error.invalidChangeState" javaScriptEscape="true"/>');
 				return;
 			}
 		}
@@ -158,12 +158,12 @@
 		currentWorkflowBeingEdited = programWorkflowId;
 		patientProgramForWorkflowEdited = patientProgramId;
 		showLayer('editWorkflowPopup');
-		$('workflowPopupTitle').innerHTML = wfName;
+		jQuery('#workflowPopupTitle').html(wfName);
 		dwr.util.removeAllRows('workflowTable');
 		dwr.util
 				.addRows(
 						'workflowTable',
-						[ '<spring:message code="general.loading" javaScriptEscape="true"/>' ],
+						[ '<openmrs:message code="general.loading" javaScriptEscape="true"/>' ],
 						[ function(s) {
 							return s;
 						} ], {
@@ -173,8 +173,8 @@
 		dwr.util
 				.addOptions(
 						'changeToState',
-						[ '<spring:message code="general.loading" javaScriptEscape="true"/>' ]);
-		$('changeStateOnDate').value = '';
+						[ '<openmrs:message code="general.loading" javaScriptEscape="true"/>' ]);
+		jQuery('#changeStateOnDate').val('');
 		DWRProgramWorkflowService
 				.getPatientStates(
 						patientProgramId,
@@ -194,22 +194,22 @@
 													function(state) {
 														++count;
 														var str = '';
-														if (!isEmpty(state.startDate)) str += ' <spring:message code="general.fromDate" javaScriptEscape="true"/> ' + formatDate(state.startDate);
-														if (!isEmpty(state.endDate)) str += ' <spring:message code="general.toDate" javaScriptEscape="true" /> ' + formatDate(state.endDate);
+														if (!isEmpty(state.startDate)) str += ' <openmrs:message code="general.fromDate" javaScriptEscape="true"/> ' + formatDate(state.startDate);
+														if (!isEmpty(state.endDate)) str += ' <openmrs:message code="general.toDate" javaScriptEscape="true" /> ' + formatDate(state.endDate);
 														if (count == goUntil) {
 															str += ' <a href="javascript:handleVoidLastState()" style="color: red">[x]</a>';
-															$('lastStateStartDate').value = formatDate(state.startDate);
-															$('lastStateEndDate').value = formatDate(state.endDate);
-															$('lastState').value = state.stateName;
+															jQuery('#lastStateStartDate').val(formatDate(state.startDate));
+															jQuery('#lastStateEndDate').val(formatDate(state.endDate));
+															jQuery('#lastState').val(state.stateName);
 														}
 														return str;
 													},
 													function(state) {
 														var str = '';
 														str += '<small>&nbsp;&nbsp;';
-														str += '<spring:message code="general.createdBy" javaScriptEscape="true" />&nbsp;';
+														str += '<openmrs:message code="general.createdBy" javaScriptEscape="true" />&nbsp;';
 														str += state.creator;
-														str += '&nbsp;<spring:message code="general.onDate" javaScriptEscape="true" />&nbsp;';
+														str += '&nbsp;<openmrs:message code="general.onDate" javaScriptEscape="true" />&nbsp;';
 														str += formatDate(state.dateCreated);
 														str += '</small>';
 														return str;
@@ -227,7 +227,7 @@
 									.addOptions(
 											'changeToState',
 											{
-												'' : '<spring:message code="State.select" javaScriptEscape="true"/>'
+												'' : '<openmrs:message code="State.select" javaScriptEscape="true"/>'
 											});
 							dwr.util.addOptions('changeToState', items, 'id',
 									'name');
@@ -251,29 +251,29 @@
 		hideLayer('editProgramOutcomeRow');
 		$j('#programOutcomeConceptElement').attr('disabled', true);
 		currentProgramBeingEdited = patientProgramId;
-		$('programNameElement').innerHTML = '<spring:message code="general.loading" javaScriptEscape="true"/>';
-		$('enrollmentDateElement').value = '';
-		$('completionDateElement').value = '';
+		jQuery('#programNameElement').html('<openmrs:message code="general.loading" javaScriptEscape="true"/>');
+		jQuery('#enrollmentDateElement').val('');
+		jQuery('#completionDateElement').val('');
 		showLayer('editPatientProgramPopup');
 		DWRProgramWorkflowService
 				.getPatientProgram(
 						patientProgramId,
 						function(program) {
-							$('programNameElement').innerHTML = program.name;
-							$('enrollmentDateElement').value = formatDate(program.dateEnrolled);
-							$('completionDateElement').value = formatDate(program.dateCompleted);
+							jQuery('#programNameElement').html(program.name);
+							jQuery('#enrollmentDateElement').val(formatDate(program.dateEnrolled));
+							jQuery('#completionDateElement').val(formatDate(program.dateCompleted));
 							if (!isEmpty(program.dateCompletedAsYmd))
 								$j('#programOutcomeConceptElement').attr(
 										'disabled', false);
 
 							setEditPatientProgramPopupSelectedLocation(program.location.locationId);
 
-							$('createdByElement').innerHTML = program.creator;//program.creator is just a String object, not User class
-							$('dateCreatedElement').innerHTML = formatDate(program.dateCreated);
+							jQuery('#createdByElement').html(program.creator);//program.creator is just a String object, not User class
+							jQuery('#dateCreatedElement').html(formatDate(program.dateCreated));
 							//show changedBy and date_changed only if changedBy is not empty
 							if (!isEmpty(program.changedBy)) {
-								$('changedByElement').innerHTML = program.changedBy;//program.creator is just a String object, not User class
-								$('dateChangedElement').innerHTML = formatDate(program.dateChanged);
+								jQuery('#changedByElement').html(program.changedBy);//program.creator is just a String object, not User class
+								jQuery('#dateChangedElement').html(formatDate(program.dateChanged));
 								showLayer('changedByTR');
 							}
 							DWRProgramWorkflowService
@@ -288,7 +288,7 @@
 															.addOptions(
 																	'programOutcomeConceptElement',
 																	{
-																		'' : '<spring:message code="Program.outcome.choose" javaScriptEscape="true"/>'
+																		'' : '<openmrs:message code="Program.outcome.choose" javaScriptEscape="true"/>'
 																	});
 													dwr.util
 															.addOptions(
@@ -320,14 +320,14 @@
 <div id="editPatientProgramPopup" style="position: absolute; background-color: #e0e0e0; z-index: 5; padding: 10px; border: 1px black dashed; display: none">
 	<table>
 		<tr>
-			<td><spring:message code="Program.program"/>:</td>
+			<td><openmrs:message code="Program.program"/>:</td>
 			<td><b><span id="programNameElement"></span></b></td>
 		</tr>
 		<tr>
-			<td><spring:message code="Program.location"/>:</td>
+			<td><openmrs:message code="Program.location"/>:</td>
 			<td>
 				<select name="locationId" id="programLocationElement">
-					<option value=""><spring:message code="Program.location.choose"/></option>
+					<option value=""><openmrs:message code="Program.location.choose"/></option>
 					<c:forEach var="location" items="${model.locations}">
 						<c:if test="${!location.retired}">
 							<option value="${location.locationId}">${location.displayString}</option>
@@ -335,52 +335,52 @@
 					</c:forEach>
 					<c:forEach var="location" items="${model.locations}">
 						<c:if test="${location.retired}">
-							<option value="${location.locationId}">${location.displayString} (<spring:message code="general.retired"/>)</option>
+							<option value="${location.locationId}">${location.displayString} (<openmrs:message code="general.retired"/>)</option>
 						</c:if>
 					</c:forEach>
 				</select>
 			</td>
 		</tr>
 		<tr>
-			<td><spring:message code="Program.dateEnrolled"/>:</td>
+			<td><openmrs:message code="Program.dateEnrolled"/>:</td>
 			<td><input type="text" id="enrollmentDateElement" size="10" onfocus="showCalendar(this)" /></td>
 		</tr>
 		<tr>
-			<td><spring:message code="Program.dateCompleted"/>:</td>
+			<td><openmrs:message code="Program.dateCompleted"/>:</td>
 			<td><input type="text" id="completionDateElement" size="10" onfocus="showCalendar(this)" /></td>
 		</tr>
         <tr id="editProgramOutcomeRow">
-			<td><spring:message code="Program.outcome"/>:</td>
+			<td><openmrs:message code="Program.outcome"/>:</td>
 			<td>
 				<select name="outcomeConceptId" id="programOutcomeConceptElement"/>
 			</td>
 		</tr>
 		<tr>
-			<td><spring:message code="general.createdBy" />:</td><td><span id="createdByElement"></span>&nbsp;<spring:message code="general.onDate" />&nbsp;<span id="dateCreatedElement"></span></td>
+			<td><openmrs:message code="general.createdBy" />:</td><td><span id="createdByElement"></span>&nbsp;<openmrs:message code="general.onDate" />&nbsp;<span id="dateCreatedElement"></span></td>
 		</tr>
 		<tr id="changedByTR" style="display:none;">
-			<td><spring:message code="general.changedBy" />:</td><td><span id="changedByElement"></span>&nbsp;<spring:message code="general.onDate" />&nbsp;<span id="dateChangedElement"></span></td>
+			<td><openmrs:message code="general.changedBy" />:</td><td><span id="changedByElement"></span>&nbsp;<openmrs:message code="general.onDate" />&nbsp;<span id="dateChangedElement"></span></td>
 		</tr>
 	</table>
 	<table width="400">
 		<tr>
 			<td align="center">
-				<input type="button" value="<spring:message code="general.save"/>" onClick="handleSaveProgram()" />
+				<input type="button" value="<openmrs:message code="general.save"/>" onClick="handleSaveProgram()" />
 			</td>
 			<td align="center">
-				<input type="button" value="<spring:message code="general.cancel"/>" onClick="currentProgramBeingEdited = null; hideLayer('editPatientProgramPopup')" />
+				<input type="button" value="<openmrs:message code="general.cancel"/>" onClick="currentProgramBeingEdited = null; hideLayer('editPatientProgramPopup')" />
 			</td>
 			<td align="center">
-				<!-- <input type="button" value="<spring:message code="general.delete"/>" onClick="handleDeleteProgram()" />	 -->	
+				<!-- <input type="button" value="<openmrs:message code="general.delete"/>" onClick="handleDeleteProgram()" />	 -->	
 				<span style="position: relative">
-				    <input type="button" id="deletePatientProgramButton" value="<spring:message code="general.delete"/>" onClick="showDiv('deletePatientProgramDiv')" />
+				    <input type="button" id="deletePatientProgramButton" value="<openmrs:message code="general.delete"/>" onClick="showDiv('deletePatientProgramDiv')" />
 					<div id="deletePatientProgramDiv" style="position: absolute; padding: 1em; bottom: -5px; left: 0px; z-index: 9; width: 250px; border: 1px black solid; background-color: #E0E0F0; display: none">
-					    <spring:message code="general.voidReasonQuestion"/>:&nbsp;&nbsp;<input type="text" id="voidReason_PatientProgram" size="15" />
+					    <openmrs:message code="general.voidReasonQuestion"/>:&nbsp;&nbsp;<input type="text" id="voidReason_PatientProgram" size="15" />
 						<br/><br/>
 						<div align="center">
-							<input type="button" value="<spring:message code="general.delete"/>" onclick="handleDeleteProgram()"/>
+							<input type="button" value="<openmrs:message code="general.delete"/>" onclick="handleDeleteProgram()"/>
 							&nbsp; &nbsp; &nbsp;
-							<input type="button" value="<spring:message code="general.cancel" />" onClick="hideDiv('deletePatientProgramDiv')"/>
+							<input type="button" value="<openmrs:message code="general.cancel" />" onClick="hideDiv('deletePatientProgramDiv')"/>
 						</div>
 					</div>
 				</span>
@@ -398,28 +398,28 @@
 						<input type="hidden" id="lastStateEndDate" value="" />
 						<input type="hidden" id="lastState" value="" />
 						Change to 
-							<select id="changeToState"><option value=""><spring:message code="general.loading"/></option></select>
+							<select id="changeToState"><option value=""><openmrs:message code="general.loading"/></option></select>
 						on 
 							<input type="text" id="changeStateOnDate" size="10" onfocus="showCalendar(this)" />
 			
-						<input type="button" value="<spring:message code="general.change"/>" onClick="handleChangeWorkflowState()" />
-						<input type="button" value="<spring:message code="general.cancel"/>" onClick="currentWorkflowBeingEdited = null; hideLayer('editWorkflowPopup')" />
+						<input type="button" value="<openmrs:message code="general.change"/>" onClick="handleChangeWorkflowState()" />
+						<input type="button" value="<openmrs:message code="general.cancel"/>" onClick="currentWorkflowBeingEdited = null; hideLayer('editWorkflowPopup')" />
 					</div>						
 	
 <c:choose>
 	<c:when test="${fn:length(model.patientPrograms) == 0}">
-		<spring:message code="Program.notEnrolledInAny"/><br/><br/>
+		<openmrs:message code="Program.notEnrolledInAny"/><br/><br/>
 	</c:when>
 	<c:otherwise>
 
 		<table width="100%" border="0">
 			<tr bgcolor="whitesmoke">
-				<td><spring:message code="Program.program"/></td>
-				<td><spring:message code="Program.dateEnrolled"/></td>
-				<td><spring:message code="Program.location"/></td>
-				<td><spring:message code="Program.dateCompleted"/></td>
-				<td><spring:message code="Program.state"/></td>
-				<td><spring:message code="Program.outcome"/></td>
+				<td><openmrs:message code="Program.program"/></td>
+				<td><openmrs:message code="Program.dateEnrolled"/></td>
+				<td><openmrs:message code="Program.location"/></td>
+				<td><openmrs:message code="Program.dateCompleted"/></td>
+				<td><openmrs:message code="Program.state"/></td>
+				<td><openmrs:message code="Program.outcome"/></td>
 			</tr>
 			<c:set var="bgColor" value="whitesmoke" />
 			<c:forEach var="program" items="${model.patientPrograms}">
@@ -431,10 +431,10 @@
 					<tr style="background-color: ${bgColor}">
 						<td valign="top">
 							<c:if test="${program.dateCompleted != null}">
-								<small><i>[<spring:message code="Program.completed"/>]</i></small>
+								<small><i>[<openmrs:message code="Program.completed"/>]</i></small>
 							</c:if>
 							<a href="javascript:showEditPatientProgramPopup(${program.patientProgramId})">
-							<openmrs:format program="${program.program}"/>
+							<openmrs:format program="${program.program}" caseConversion="global"/>
 							</a>
 						</td>
 						<td align="left" valign="top">
@@ -450,7 +450,7 @@
 									<openmrs:formatDate date="${program.dateCompleted}" type="medium" />
 								</c:when>
 								<c:otherwise>
-									<i><spring:message code="Program.stillEnrolled"/></i>
+									<i><openmrs:message code="Program.stillEnrolled"/></i>
 								</c:otherwise>								
 							</c:choose>
 						</td>
@@ -459,8 +459,8 @@
 								<c:forEach var="workflow" items="${program.program.workflows}">
 									<tr>
 										<td style="" valign="top">
-										
-											<small><openmrs:format concept="${workflow.concept}"/>:</small>
+											
+											<small><openmrs:format concept="${workflow.concept}" caseConversion="global"/>:</small>
 											<br/>
 											
 											<c:set var="stateId" value="" />
@@ -473,16 +473,16 @@
 											</c:forEach>
 											<c:choose>
 												<c:when test="${not empty stateId}">
-													<b><openmrs:format conceptId="${stateId}"/></b>
-													<i>(<spring:message code="general.since" /> 
+													<b><openmrs:format conceptId="${stateId}" caseConversion="global"/></b>
+													<i>(<openmrs:message code="general.since" /> 
 													<openmrs:formatDate date="${stateStart}" type="medium" />)</i>
 												</c:when>
 												<c:otherwise>
-													<i>(<spring:message code="general.none" />)</i>
+													<i>(<openmrs:message code="general.none" />)</i>
 												</c:otherwise>
 											</c:choose>
 
-											<a href="javascript:showEditWorkflowPopup('<openmrs:concept conceptId="${workflow.concept.conceptId}" nameVar="n" var="v" numericVar="nv">${n.name}</openmrs:concept>', ${program.patientProgramId}, ${workflow.programWorkflowId})">[<spring:message code="general.edit"/>]</a>
+											<a href="javascript:showEditWorkflowPopup('<openmrs:concept conceptId="${workflow.concept.conceptId}" nameVar="n" var="v" numericVar="nv">${n.name}</openmrs:concept>', ${program.patientProgramId}, ${workflow.programWorkflowId})">[<openmrs:message code="general.edit"/>]</a>
 										</td>
 									</tr>
 								</c:forEach>
@@ -494,7 +494,7 @@
                                     <openmrs:format concept="${program.outcome}"/>
                                 </c:when>
                                 <c:otherwise>
-                                    <i>(<spring:message code="general.none" />)</i>
+                                    <i>(<openmrs:message code="general.none" />)</i>
                                 </c:otherwise>
                             </c:choose>
 
@@ -528,17 +528,23 @@
 			position: 'top',
 			autoOpen: false,
 			modal: true,
-			title: '<spring:message code="Program.add" javaScriptEscape="true"/>',
+			title: '<openmrs:message code="Program.add" javaScriptEscape="true"/>',
 			width: '90%',
 			zIndex: 100,
-			buttons: { '<spring:message code="Program.enrollButton"/>': function() { handleEnrollInProgram(); },
-					   '<spring:message code="general.cancel"/>': function() { $j(this).dialog("close"); }
+			buttons: { '<openmrs:message code="Program.enrollButton"/>': function() { handleEnrollInProgram(); },
+					   '<openmrs:message code="general.cancel"/>': function() { $j(this).dialog("close"); }
 			}
 		});
 	});
 
 	function handleEnrollInProgram() {
-		$j('#enrollForm').submit();
+		if ($j('#programSelector').val() == ""){
+			alert('<openmrs:message code="Program.error.programRequired" />');
+		}
+		else{
+			$j('#enrollForm').submit();
+		}
+
 	}
 </script>
 
@@ -551,10 +557,10 @@
 		<input type="hidden" name="returnPage" value="${pageContext.request.contextPath}/patientDashboard.form?patientId=${model.patientId}"/>
 		<table style="margin: 0px 0px 1em 2em;">
 			<tr>
-				<td nowrap><spring:message code="Program.program" javaScriptEscape="true"/>:</td>
+				<td nowrap><openmrs:message code="Program.program" javaScriptEscape="true"/>:</td>
 				<td>
 					<select id="programSelector" name="programId">
-						<option value=""><spring:message code="Program.choose"/></option>
+						<option value=""><openmrs:message code="Program.choose"/></option>
 						<c:forEach var="program" items="${model.programs}">
 							<c:if test="${!program.retired}">
 							  <option id="programOption${program.programId}" value="${program.programId}"><openmrs:format program="${program}"/></option>
@@ -564,14 +570,14 @@
 				</td>
 			</tr>
 			<tr>
-				<td nowrap><spring:message code="Program.dateEnrolled"/>:</td>
+				<td nowrap><openmrs:message code="Program.dateEnrolled"/>:</td>
 				<td><openmrs_tag:dateField formFieldName="dateEnrolled" startValue="" /></td>
 			</tr>
 			<tr>
-				<td nowrap><spring:message code="Program.location"/>:</td>
+				<td nowrap><openmrs:message code="Program.location"/>:</td>
 				<td>
 					<select name="locationId">
-						<option value=""><spring:message code="Program.location.choose"/></option>
+						<option value=""><openmrs:message code="Program.location.choose"/></option>
 						<c:forEach var="location" items="${model.locations}">
 							<c:if test="${!location.retired}">
 							  <option value="${location.locationId}">${location.displayString}</option>
@@ -579,7 +585,7 @@
 						</c:forEach>
 						<c:forEach var="location" items="${model.locations}">
 							<c:if test="${location.retired}">						
-								<option value="${location.locationId}">${location.displayString} (<spring:message code="general.retired"/>)</option>						
+								<option value="${location.locationId}">${location.displayString} (<openmrs:message code="general.retired"/>)</option>						
 							</c:if>
 						</c:forEach>
 					</select>				
@@ -587,11 +593,11 @@
 			</tr>
 			<tr><td colspan="2">&nbsp;</td></tr>
 			<tr id="initialStateSection" style="display:none;">
-				<td valign="top"><spring:message code="Program.initialStates"/><br/>(<spring:message code="general.optional"/>)</td>
+				<td valign="top"><openmrs:message code="Program.initialStates"/><br/>(<openmrs:message code="general.optional"/>)</td>
 				<td>
 					<c:forEach items="${model.programs}" var="p">
 						<table id="workflowSection${p.programId}" style="display:none;" class="workflowSection">
-							<c:forEach items="${p.allWorkflows}" var="wf">
+							<c:forEach items="${p.workflows}" var="wf">
 								<tr>
 									<th align="left"><openmrs:format concept="${wf.concept}"/></th>
 									<td>
@@ -616,6 +622,6 @@
 			
 <c:if test="${model.allowEdits == 'true' && fn:length(model.programs) > 0}">
 	<openmrs:hasPrivilege privilege="Edit Patient Programs">
-		<a href="#" id="addProgramLink"><spring:message code="Program.add"/></a>
+		<a href="#" id="addProgramLink"><openmrs:message code="Program.add"/></a>
 	</openmrs:hasPrivilege>
 </c:if>

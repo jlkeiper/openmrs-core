@@ -96,21 +96,6 @@ public class ConceptReferenceTermValidatorTest extends BaseContextSensitiveTest 
 	/**
 	 * @see {@link ConceptReferenceTermValidator#validate(Object,Errors)}
 	 */
-	@Test
-	@Verifies(value = "should fail if the concept reference term name is a duplicate in its concept source", method = "validate(Object,Errors)")
-	public void validate_shouldFailIfTheConceptReferenceTermNameIsADuplicateInItsConceptSource() throws Exception {
-		ConceptReferenceTerm term = new ConceptReferenceTerm();
-		term.setName("weight term");
-		term.setCode("code");
-		term.setConceptSource(Context.getConceptService().getConceptSource(1));
-		Errors errors = new BindException(term, "term");
-		new ConceptReferenceTermValidator().validate(term, errors);
-		Assert.assertEquals(true, errors.hasFieldErrors("name"));
-	}
-	
-	/**
-	 * @see {@link ConceptReferenceTermValidator#validate(Object,Errors)}
-	 */
 	@Test(expected = IllegalArgumentException.class)
 	@Verifies(value = "should fail if the concept reference term object is null", method = "validate(Object,Errors)")
 	public void validate_shouldFailIfTheConceptReferenceTermObjectIsNull() throws Exception {
@@ -241,38 +226,6 @@ public class ConceptReferenceTermValidatorTest extends BaseContextSensitiveTest 
 		Errors errors = new BindException(term, "term");
 		new ConceptReferenceTermValidator().validate(term, errors);
 		Assert.assertEquals(true, errors.hasFieldErrors("conceptReferenceTermMaps[0].conceptMapType"));
-	}
-	
-	/**
-	 * @see {@link ConceptReferenceTermValidator#validate(Object,Errors)}
-	 */
-	@Test
-	@Verifies(value = "should fail if a mapped concept map type does not exist in the database", method = "validate(Object,Errors)")
-	public void validate_shouldFailIfAMappedConceptMapTypeDoesNotExistInTheDatabase() throws Exception {
-		ConceptReferenceTerm term = new ConceptReferenceTerm();
-		term.setName("name");
-		term.setCode("code");
-		term.setConceptSource(Context.getConceptService().getConceptSource(1));
-		term.addConceptReferenceTermMap(new ConceptReferenceTermMap(new ConceptReferenceTerm(1), new ConceptMapType()));
-		Errors errors = new BindException(term, "term");
-		new ConceptReferenceTermValidator().validate(term, errors);
-		Assert.assertEquals(true, errors.hasFieldErrors("conceptReferenceTermMaps[0].conceptMapType"));
-	}
-	
-	/**
-	 * @see {@link ConceptReferenceTermValidator#validate(Object,Errors)}
-	 */
-	@Test
-	@Verifies(value = "should fail if a mapped concept reference term does not exist in the database", method = "validate(Object,Errors)")
-	public void validate_shouldFailIfAMappedConceptReferenceTermDoesNotExistInTheDatabase() throws Exception {
-		ConceptReferenceTerm term = new ConceptReferenceTerm();
-		term.setName("name");
-		term.setCode("code");
-		term.setConceptSource(Context.getConceptService().getConceptSource(1));
-		term.addConceptReferenceTermMap(new ConceptReferenceTermMap(new ConceptReferenceTerm(), new ConceptMapType(1)));
-		Errors errors = new BindException(term, "term");
-		new ConceptReferenceTermValidator().validate(term, errors);
-		Assert.assertEquals(true, errors.hasFieldErrors("conceptReferenceTermMaps[0].termB"));
 	}
 	
 	/**

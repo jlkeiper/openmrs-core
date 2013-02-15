@@ -35,7 +35,10 @@ import org.springframework.validation.ValidationUtils;
 import org.springframework.validation.Validator;
 
 /**
- * Validates {@link Concept} objects.
+ * Validates {@link Concept} objects. <br>
+ * These validations are also documented at <a
+ * href="https://wiki.openmrs.org/x/-gkdAg">https://wiki.openmrs.org/x/-gkdAg</a>. Any changes made
+ * to this source also need to be reflected on that page.
  */
 @Handler(supports = { Concept.class }, order = 50)
 public class ConceptValidator implements Validator {
@@ -77,6 +80,7 @@ public class ConceptValidator implements Validator {
 	 * @should pass if the duplicate ConceptName is neither preferred nor fully Specified
 	 * @should pass if the concept has a synonym that is also a short name
 	 * @should fail if a term is mapped multiple times to the same concept
+	 * @should not fail if a term has two new mappings on it
 	 * @should fail if there is a duplicate unretired concept name in the same locale different than
 	 *         the system locale
 	 * @should pass for a new concept with a map created with deprecated concept map methods
@@ -256,9 +260,11 @@ public class ConceptValidator implements Validator {
 					mappedTermIds = new HashSet<Integer>();
 				
 				//if we already have a mapping to this term, reject it this map
-				if (!mappedTermIds.add(map.getConceptReferenceTerm().getId())) {
-					errors.rejectValue("conceptMappings[" + index + "]", "ConceptReferenceTerm.term.alreadyMapped",
-					    "Cannot map a reference term multiple times to the same concept");
+				if (map.getConceptReferenceTerm().getId() != null) {
+					if (!mappedTermIds.add(map.getConceptReferenceTerm().getId())) {
+						errors.rejectValue("conceptMappings[" + index + "]", "ConceptReferenceTerm.term.alreadyMapped",
+						    "Cannot map a reference term multiple times to the same concept");
+					}
 				}
 				
 				index++;

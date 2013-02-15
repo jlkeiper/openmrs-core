@@ -20,8 +20,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.Vector;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.openmrs.api.APIException;
 
 /**
@@ -33,8 +31,6 @@ import org.openmrs.api.APIException;
 public class Patient extends Person implements java.io.Serializable {
 	
 	public static final long serialVersionUID = 93123L;
-	
-	private static final Log log = LogFactory.getLog(Patient.class);
 	
 	// Fields
 	
@@ -250,7 +246,7 @@ public class Patient extends Person implements java.io.Serializable {
 	}
 	
 	/**
-	 * Return's the first (preferred) patient identifier matching <code>identifierTypeId</code>
+	 * Returns the first (preferred) patient identifier matching <code>identifierTypeId</code>
 	 * 
 	 * @param identifierTypeId
 	 * @return preferred patient identifier
@@ -272,7 +268,7 @@ public class Patient extends Person implements java.io.Serializable {
 	}
 	
 	/**
-	 * Return's the (preferred) patient identifier matching <code>identifierTypeName</code>
+	 * Returns the (preferred) patient identifier matching <code>identifierTypeName</code>
 	 * Otherwise returns that last <code>PatientIdenitifer</code>
 	 * 
 	 * @param identifierTypeName
@@ -362,4 +358,12 @@ public class Patient extends Person implements java.io.Serializable {
 		
 	}
 	
+	/**
+	 * Returns the person represented
+	 * @return the person represented by this object
+	 * @since 1.10.0
+	 */
+	public Person getPerson() {
+		return this;
+	}
 }

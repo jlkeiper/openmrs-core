@@ -13,6 +13,7 @@
  */
 package org.openmrs.api.context;
 
+import java.io.Serializable;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -40,7 +41,9 @@ import org.openmrs.util.RoleConstants;
  * 
  * @see org.openmrs.api.context.Context
  */
-public class UserContext {
+public class UserContext implements Serializable {
+	
+	private static final long serialVersionUID = -806631231941890648L;
 	
 	/**
 	 * Logger - shared by entire class
@@ -75,7 +78,7 @@ public class UserContext {
 	/**
 	 * User's defined location
 	 */
-	private Location location = null;
+	private Integer locationId;
 	
 	/**
 	 * Default public constructor
@@ -98,7 +101,6 @@ public class UserContext {
 			log.debug("Authenticating with username: " + username);
 		
 		this.user = contextDAO.authenticate(username, password);
-		
 		setUserLocation();
 		if (log.isDebugEnabled())
 			log.debug("Authenticated as: " + this.user);
@@ -296,25 +298,31 @@ public class UserContext {
 		if (isAuthenticated()) {
 			
 			// check user's privileges
-			if (getAuthenticatedUser().hasPrivilege(privilege))
+			if (getAuthenticatedUser().hasPrivilege(privilege) || getAuthenticatedRole().hasPrivilege(privilege)) {
+				Context.getUserService().notifyPrivilegeListeners(getAuthenticatedUser(), privilege, true);
 				return true;
+			}
 			
-			if (getAuthenticatedRole().hasPrivilege(privilege))
-				return true;
 		}
 		
 		if (log.isDebugEnabled())
 			log.debug("Checking '" + privilege + "' against proxies: " + proxies);
 		
 		// check proxied privileges
-		for (String s : proxies)
-			if (s.equals(privilege))
+		for (String s : proxies) {
+			if (s.equals(privilege)) {
+				Context.getUserService().notifyPrivilegeListeners(getAuthenticatedUser(), privilege, true);
 				return true;
+			}
+		}
 		
-		if (getAnonymousRole().hasPrivilege(privilege))
+		if (getAnonymousRole().hasPrivilege(privilege)) {
+			Context.getUserService().notifyPrivilegeListeners(getAuthenticatedUser(), privilege, true);
 			return true;
+		}
 		
 		// default return value
+		Context.getUserService().notifyPrivilegeListeners(getAuthenticatedUser(), privilege, false);
 		return false;
 	}
 	
@@ -357,11 +365,29 @@ public class UserContext {
 	}
 	
 	/**
+	 * @return locationId for this user context if any is set
+	 * @since 1.10
+	 */
+	public Integer getLocationId() {
+		return locationId;
+	}
+	
+	/**
+	 * @param locationId locationId to set
+	 * @since 1.10
+	 */
+	public void setLocationId(Integer locationId) {
+		this.locationId = locationId;
+	}
+	
+	/**
 	 * @return current location for this user context if any is set
 	 * @since 1.9
 	 */
 	public Location getLocation() {
-		return this.location;
+		if (locationId == null)
+			return null;
+		return Context.getLocationService().getLocation(locationId);
 	}
 	
 	/**
@@ -369,7 +395,8 @@ public class UserContext {
 	 * @since 1.9
 	 */
 	public void setLocation(Location location) {
-		this.location = location;
+		if (location != null)
+			this.locationId = location.getLocationId();
 	}
 	
 	/**
@@ -381,21 +408,22 @@ public class UserContext {
 			String locationId = this.user.getUserProperty(OpenmrsConstants.USER_PROPERTY_DEFAULT_LOCATION);
 			if (StringUtils.isNotBlank(locationId)) {
 				//only go ahead if it has actually changed OR if wasn't set before
-				if (this.location == null || !this.location.getName().equalsIgnoreCase(locationId)) {
+				if (this.locationId == null || this.locationId != Integer.parseInt(locationId)) {
 					try {
-						this.location = Context.getLocationService().getLocation(Integer.valueOf(locationId));
+						this.locationId = Context.getLocationService().getLocation(Integer.valueOf(locationId))
+						        .getLocationId();
 					}
 					catch (NumberFormatException e) {
 						//Drop the stored value since we have no match for the set id
-						if (this.location != null)
-							this.location = null;
+						if (this.locationId != null)
+							this.locationId = null;
 						log.warn("The value of the default Location property of the user with id:" + this.user.getUserId()
 						        + " should be an integer", e);
 					}
 				}
 			} else {
-				if (this.location != null)
-					this.location = null;
+				if (this.locationId != null)
+					this.locationId = null;
 			}
 		}
 	}

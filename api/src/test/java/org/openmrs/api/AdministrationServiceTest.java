@@ -16,23 +16,30 @@ package org.openmrs.api;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.openmrs.EncounterType;
 import org.openmrs.GlobalProperty;
 import org.openmrs.ImplementationId;
+import org.openmrs.User;
 import org.openmrs.api.context.Context;
+import org.openmrs.customdatatype.datatype.BooleanDatatype;
 import org.openmrs.customdatatype.datatype.DateDatatype;
 import org.openmrs.test.BaseContextSensitiveTest;
 import org.openmrs.test.Verifies;
+import org.openmrs.util.HttpClient;
 import org.openmrs.util.OpenmrsConstants;
+
+import org.springframework.validation.BindException;
+import org.springframework.validation.Errors;
 
 /**
  * TODO clean up and finish this test class. Should test all methods in the
@@ -44,6 +51,8 @@ public class AdministrationServiceTest extends BaseContextSensitiveTest {
 	
 	protected static final String ADMIN_INITIAL_DATA_XML = "org/openmrs/api/include/AdministrationServiceTest-globalproperties.xml";
 	
+	private HttpClient implementationHttpClient;
+	
 	/**
 	 * Run this before each unit test in this class. It simply assigns the services used in this
 	 * class to private variables The "@Before" method in {@link BaseContextSensitiveTest} is run
@@ -53,8 +62,12 @@ public class AdministrationServiceTest extends BaseContextSensitiveTest {
 	 */
 	@Before
 	public void runBeforeEachTest() throws Exception {
-		if (adminService == null)
+		if (adminService == null) {
 			adminService = Context.getAdministrationService();
+			implementationHttpClient = mock(HttpClient.class);
+			adminService.setImplementationIdHttpClient(implementationHttpClient);
+		}
+		
 	}
 	
 	/**
@@ -243,6 +256,101 @@ public class AdministrationServiceTest extends BaseContextSensitiveTest {
 	@Verifies(value = "should not fail with null default value", method = "getGlobalProperty(String,String)")
 	public void getGlobalProperty_shouldNotFailWithNullDefaultValue() throws Exception {
 		adminService.getGlobalProperty("asdfsadfsafd", null);
+	}
+	
+	/**
+	 * @see {@link AdministrationService#updateGlobalProperty(String,String)}
+	 */
+	@Test
+	@Verifies(value = "should update global property in database", method = "updateGlobalProperty(String,String)")
+	public void updateGlobalProperty_shouldUpdateGlobalPropertyInDatabase() throws Exception {
+		executeDataSet("org/openmrs/api/include/AdministrationServiceTest-globalproperties.xml");
+		
+		String propertyValue = adminService.getGlobalProperty("a_valid_gp_key");
+		Assert.assertEquals("correct-value", propertyValue);
+		
+		adminService.updateGlobalProperty("a_valid_gp_key", "new-value");
+		
+		String newValue = adminService.getGlobalProperty("a_valid_gp_key");
+		Assert.assertEquals("new-value", newValue);
+	}
+	
+	/**
+	 * @see {@link AdministrationService#updateGlobalProperty(String,String)}
+	 */
+	@Test(expected = IllegalStateException.class)
+	@Verifies(value = "should fail if global property being updated does not already exist", method = "updateGlobalProperty(String,String)")
+	public void updateGlobalProperty_shouldFailIfGlobalPropertyBeingUpdatedDoesNotAlreadyExist() throws Exception {
+		executeDataSet("org/openmrs/api/include/AdministrationServiceTest-globalproperties.xml");
+		adminService.updateGlobalProperty("a_invalid_gp_key", "asdfsadfsafd");
+	}
+	
+	/**
+	 * @see {@link AdministrationService#updateGlobalProperty(String,String)}
+	 */
+	@Test
+	@Verifies(value = "should update a global property whose typed value is handled by a custom datatype", method = "updateGlobalProperty(String,String)")
+	public void updateGlobalProperty_shouldUpdateAGlobalPropertyWhoseTypedvalueIsHandledByACustomDatatype() throws Exception {
+		GlobalProperty gp = new GlobalProperty();
+		gp.setProperty("Flag");
+		gp.setDatatypeClassname(BooleanDatatype.class.getName());
+		gp.setValue(Boolean.FALSE);
+		adminService.saveGlobalProperty(gp);
+		Assert.assertEquals(adminService.getGlobalProperty("Flag"), "false");
+		
+		adminService.updateGlobalProperty("Flag", Boolean.TRUE.toString());
+		Assert.assertEquals(adminService.getGlobalProperty("Flag"), "true");
+	}
+	
+	/**
+	 * @see {@link AdministrationService#setGlobalProperty(String,String)}
+	 */
+	@Test
+	@Verifies(value = "should create global property in database", method = "setGlobalProperty(String,String)")
+	public void setGlobalProperty_shouldCreateGlobalPropertyInDatabase() throws Exception {
+		String newKey = "new_gp_key";
+		
+		String initialValue = adminService.getGlobalProperty(newKey);
+		Assert.assertNull(initialValue); // ensure gp doesnt exist before test
+		adminService.setGlobalProperty(newKey, "new_key");
+		
+		String newValue = adminService.getGlobalProperty(newKey);
+		Assert.assertNotNull(newValue);
+	}
+	
+	/**
+	 * @see {@link AdministrationService#setGlobalProperty(String,String)}
+	 */
+	@Test
+	@Verifies(value = "should overwrite global property if exists", method = "setGlobalProperty(String,String)")
+	public void setGlobalProperty_shouldOverwriteGlobalPropertyIfExists() throws Exception {
+		
+		executeDataSet("org/openmrs/api/include/AdministrationServiceTest-globalproperties.xml");
+		
+		String propertyValue = adminService.getGlobalProperty("a_valid_gp_key");
+		Assert.assertEquals("correct-value", propertyValue);
+		
+		adminService.setGlobalProperty("a_valid_gp_key", "new-value");
+		
+		String newValue = adminService.getGlobalProperty("a_valid_gp_key");
+		Assert.assertEquals("new-value", newValue);
+		
+	}
+	
+	/**
+	 * @see {@link AdministrationService#setGlobalProperty(String,String)}
+	 */
+	@Test
+	@Verifies(value = "should save a global property whose typed value is handled by a custom datatype", method = "setGlobalProperty(String,String)")
+	public void setGlobalProperty_shouldSaveAGlobalPropertyWhoseTypedValueIsHandledByACustomDatatype() throws Exception {
+		
+		String newKey = "Flag";
+		String initialValue = adminService.getGlobalProperty(newKey);
+		Assert.assertNull(initialValue);
+		
+		adminService.setGlobalProperty(newKey, Boolean.FALSE.toString());
+		Assert.assertEquals(adminService.getGlobalProperty("Flag"), "false");
+		
 	}
 	
 	/**
@@ -611,5 +719,85 @@ public class AdministrationServiceTest extends BaseContextSensitiveTest {
 		gp.setValue(new Date());
 		adminService.saveGlobalProperty(gp);
 		Assert.assertNotNull(gp.getValueReference());
+	}
+	
+	/**
+	 * @see AdministrationService#getSearchLocales(User)
+	 * @verifies exclude not allowed locales
+	 */
+	@Test
+	public void getSearchLocales_shouldExcludeNotAllowedLocales() throws Exception {
+		//given
+		Context.getAdministrationService().saveGlobalProperty(
+		    new GlobalProperty(OpenmrsConstants.GLOBAL_PROPERTY_LOCALE_ALLOWED_LIST, "en_US, pl, es"));
+		
+		User user = Context.getAuthenticatedUser();
+		user.setUserProperty(OpenmrsConstants.USER_PROPERTY_PROFICIENT_LOCALES, "es_CL, en_US, pl");
+		Context.getUserService().saveUser(user, null);
+		
+		//when
+		List<Locale> searchLocales = Context.getAdministrationService().getSearchLocales();
+		
+		//then
+		Assert.assertTrue("en_US", searchLocales.contains(new Locale("en", "US")));
+		Assert.assertTrue("pl", searchLocales.contains(new Locale("pl")));
+		Assert.assertTrue("es", searchLocales.contains(new Locale("es")));
+		Assert.assertFalse("es_CL", searchLocales.contains(new Locale("es", "CL")));
+	}
+	
+	/**
+	 * @see AdministrationService#getSearchLocales(User)
+	 * @verifies include currently selected full locale and langugage
+	 */
+	@Test
+	public void getSearchLocales_shouldIncludeCurrentlySelectedFullLocaleAndLangugage() throws Exception {
+		//given
+		Context.getAdministrationService().saveGlobalProperty(
+		    new GlobalProperty(OpenmrsConstants.GLOBAL_PROPERTY_LOCALE_ALLOWED_LIST, "en_GB"));
+		User user = Context.getAuthenticatedUser();
+		user.setUserProperty(OpenmrsConstants.USER_PROPERTY_PROFICIENT_LOCALES, "");
+		Context.getUserService().saveUser(user, null);
+		Context.setLocale(new Locale("en", "GB"));
+		
+		//when
+		List<Locale> searchLocales = Context.getAdministrationService().getSearchLocales();
+		
+		//then
+		Assert.assertEquals(Context.getLocale(), searchLocales.get(0));
+		Assert.assertEquals(new Locale(Context.getLocale().getLanguage()), searchLocales.get(1));
+	}
+	
+	/**
+	 * @see AdministrationService#getSearchLocales(User)
+	 * @verifies include users proficient locales
+	 */
+	@Test
+	public void getSearchLocales_shouldIncludeUsersProficientLocales() throws Exception {
+		//given
+		Context.getAdministrationService().saveGlobalProperty(
+		    new GlobalProperty(OpenmrsConstants.GLOBAL_PROPERTY_LOCALE_ALLOWED_LIST, "en_GB, en_US, pl"));
+		
+		User user = Context.getAuthenticatedUser();
+		user.setUserProperty(OpenmrsConstants.USER_PROPERTY_PROFICIENT_LOCALES, "en_GB, en_US");
+		Context.getUserService().saveUser(user, null);
+		
+		//when
+		List<Locale> searchLocales = Context.getAdministrationService().getSearchLocales();
+		
+		//then
+		Assert.assertTrue("en_GB", searchLocales.contains(new Locale("en", "GB")));
+		Assert.assertTrue("en_US", searchLocales.contains(new Locale("en", "US")));
+		Assert.assertFalse("pl", searchLocales.contains(new Locale("pl")));
+	}
+	
+	/**
+	 * @see AdministrationService#validate(Object,Errors)
+	 * @verifies throws APIException if the input is null
+	 */
+	
+	@Test(expected = APIException.class)
+	public void validate_shouldThrowThrowAPIExceptionIfTheInputIsNull() throws Exception {
+		BindException errors = new BindException(new Object(), "");
+		Context.getAdministrationService().validate(null, errors);
 	}
 }

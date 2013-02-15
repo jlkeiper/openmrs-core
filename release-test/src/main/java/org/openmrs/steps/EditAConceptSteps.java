@@ -15,14 +15,16 @@ package org.openmrs.steps;
 
 import org.jbehave.core.annotations.Then;
 import org.jbehave.core.annotations.When;
-import org.junit.Assert;
 import org.openmrs.Steps;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.lift.Finders;
+import org.openqa.selenium.lift.find.HtmlTagFinder;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
-import static org.openqa.selenium.lift.Finders.*;
+import static org.openqa.selenium.lift.Finders.textbox;
+import static org.openqa.selenium.lift.Finders.title;
 import static org.openqa.selenium.lift.Matchers.attribute;
 import static org.openqa.selenium.lift.Matchers.text;
 
@@ -32,15 +34,11 @@ public class EditAConceptSteps extends Steps {
 		super(driver);
 	}
 	
-	@When("I navigate to the $dictionary page")
-	public void navigateToDictonaryPage(String dictionaryTitle) {
-		clickOn(link().with(text(equalTo(dictionaryTitle))));
-		assertPresenceOf(title().with(text(equalTo("OpenMRS - " + dictionaryTitle))));
-	}
-	
 	@When("I search for a concept by typing $aspirin and wait for the search hits")
 	public void searchForAConceptAndWaitForTheHits(String phrase) {
-		type(phrase, into(textbox().with(attribute("id", equalTo("inputNode")))));
+        HtmlTagFinder conceptName = textbox().with(attribute("id", equalTo("inputNode")));
+        waitFor(conceptName);
+        type(phrase, into(conceptName));
 		waitFor(Finders.table().with(attribute("id", equalTo("openmrsSearchTable"))));
 	}
 	
@@ -51,14 +49,14 @@ public class EditAConceptSteps extends Steps {
 	
 	@Then("Take me to the viewing concept page")
 	public void takeMeToViewingConceptPage() {
-		Assert.assertTrue("Page title was expected to start with 'OpenMRS - Viewing Concept' but was:" + title(), getTitle()
-		        .startsWith("OpenMRS - Viewing Concept"));
+        waitAndAssertFor(title().with(text(containsString("OpenMRS - Viewing Concept"))));
 	}
 	
 
 	@When("I change the fully specified name to $aspirin")
 	public void editTheFullySpecifiedName(String newName) {
-		type(random(newName), into(textbox().with(attribute("id", equalTo("namesByLocale[en].name")))));
+		waitFor(textbox().with(attribute("id", equalTo("namesByLocale[en].name"))));
+        type(random(newName), into(textbox().with(attribute("id", equalTo("namesByLocale[en].name")))));
 	}
 	
 	@When("I edit the synonym")
@@ -101,6 +99,6 @@ public class EditAConceptSteps extends Steps {
 	
 	@Then("The concept should get saved with a success message")
 	public void theConceptShouldGetCreated() {
-		assertPresenceOf(Finders.div("openmrs_msg").with(text(equalTo("Concept saved successfully"))));
+		waitAndAssertFor(Finders.div("openmrs_msg").with(text(equalTo("Concept saved successfully"))));
 	}
 }

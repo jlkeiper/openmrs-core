@@ -76,10 +76,10 @@
 	}
 	
 	function cohort_refreshDisplay() {
-		$('cohort_fromNumber').innerHTML = cohort_startIndex + 1;
-		$('cohort_toNumber').innerHTML = cohort_endIndex;
-		$('cohort_ofNumber').innerHTML = cohort_patientIds.length;
-		$('cohort_contents').innerHTML = '<spring:message code="general.loading"/>';
+		jQuery('#cohort_fromNumber').html(cohort_startIndex + 1);
+		jQuery('#cohort_toNumber').html(cohort_endIndex);
+		jQuery('#cohort_ofNumber').html(cohort_patientIds.length);
+		jQuery('#cohort_contents').html('<openmrs:message code="general.loading"/>');
 		var str = '';
 		for (var i = cohort_startIndex; i < cohort_endIndex; ++i)
 			str += cohort_patientIds[i] + ',';
@@ -112,7 +112,7 @@
 		}
 		if (cohort_endIndex < cohort_patientIds.length)
 			str += '...<br/>';
-		$('cohort_contents').innerHTML = str;
+		jQuery('#cohort_contents').html(str);
 	}
 
 	<c:choose>
@@ -145,7 +145,7 @@
 		&nbsp;&nbsp;&nbsp;&nbsp;
 		<a href="javascript:cohort_pageBack()">&lt;</a>
 		&nbsp;&nbsp;&nbsp;&nbsp;
-		<spring:message code="general.displayingXtoYofZ" arguments='<span id="cohort_fromNumber"></span>,<span id="cohort_toNumber"></span>,<span id="cohort_ofNumber"></span>' />
+		<openmrs:message code="general.displayingXtoYofZ" arguments='<span id="cohort_fromNumber"></span>,<span id="cohort_toNumber"></span>,<span id="cohort_ofNumber"></span>' />
 		&nbsp;&nbsp;&nbsp;&nbsp;
 		<a href="javascript:cohort_pageForwards()">&gt;</a>
 		&nbsp;&nbsp;&nbsp;&nbsp;

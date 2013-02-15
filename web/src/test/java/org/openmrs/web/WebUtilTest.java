@@ -26,6 +26,36 @@ import org.openmrs.BaseOpenmrsObject;
 public class WebUtilTest {
 	
 	/**
+	 * @see org.openmrs.web.WebUtil#getContextPath()
+	 * @verifies should return empty string if webappname is null
+	 */
+	@Test
+	public void getContextPath_shouldReturnEmptyStringWhenWebAppNameIsNull() throws Exception {
+		WebConstants.WEBAPP_NAME = null;
+		Assert.assertEquals("", WebUtil.getContextPath());
+	}
+	
+	/**
+	 * @see org.openmrs.web.WebUtil#getContextPath()
+	 * @verifies should return empty string if webappname is empty string
+	 */
+	@Test
+	public void getContextPath_shouldReturnEmptyStringWhenWebAppNameIsEmptyString() throws Exception {
+		WebConstants.WEBAPP_NAME = "";
+		Assert.assertEquals("", WebUtil.getContextPath());
+	}
+	
+	/**
+	 * @see org.openmrs.web.WebUtil#getContextPath()
+	 * @verifies should return webappname with leading slash if webappname has a value
+	 */
+	@Test
+	public void getContextPath_shouldReturnValueSpecifiedInWebAppName() throws Exception {
+		WebConstants.WEBAPP_NAME = "Value";
+		Assert.assertEquals("/Value", WebUtil.getContextPath());
+	}
+	
+	/**
 	 * @see WebUtil#normalizeLocale(String)
 	 * @verifies ignore leading spaces
 	 */
@@ -50,7 +80,7 @@ public class WebUtilTest {
 	@Test
 	public void normalizeLocale_shouldNotAcceptInvalidLocales() throws Exception {
 		Assert.assertNull(WebUtil.normalizeLocale("ptrg"));
-		Assert.assertNull(WebUtil.normalizeLocale("usa"));
+		Assert.assertNull(WebUtil.normalizeLocale("usaa"));
 	}
 	
 	/**
@@ -77,7 +107,7 @@ public class WebUtilTest {
 	 */
 	@Test
 	public void sanitizeLocales_shouldSkipOverInvalidLocales() throws Exception {
-		Assert.assertEquals("fr_RW, it, en", WebUtil.sanitizeLocales("és, qqq, fr_RW, it, enñ"));
+		Assert.assertEquals("fr_RW, it, en", WebUtil.sanitizeLocales("és, qqqq, fr_RW, it, enñ"));
 	}
 	
 	/**

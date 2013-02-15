@@ -31,19 +31,9 @@ public class CreateObservationSteps extends Steps {
         super(driver);
     }
 
-    @Given("I am on Admin page")
-    public void iAmOnAdminPage() {
-        assertPresenceOf(title().with(text(equalTo("OpenMRS - " + "Administration"))));
-    }
-
-    @When("I click on the Manage Observations link")
-    public void clickManageObsLink() {
-        clickOn(link().with(text(equalTo("Manage Observation"))));
-    }
-
     @Then("take me to Observation Management Page with Observation Management as heading")
     public void verifyManagementPage() {
-        assertPresenceOf(div().with(text(containsString("Observation Management"))));
+        waitAndAssertFor(div().with(text(containsString("Observation Management"))));
     }
 
 
@@ -52,15 +42,11 @@ public class CreateObservationSteps extends Steps {
     	verifyManagementPage();
     }
 
-    @When("I click on $addObsLink  link")
-    public void clickOnAddObservation(String addObsLink) {
-        clickOn(link().with(text(equalTo("Add Observation"))));
-    }
 
     @Then("take me to Add Observation page with $heading as heading and has a button with label $buttonText")
     public void verifyAddObservationPage(String heading, String buttonText) {
-        assertPresenceOf(div().with(text(containsString(heading))));
-        assertPresenceOf(button("Save Observation"));
+        waitAndAssertFor(div().with(text(containsString(heading))));
+        waitAndAssertFor(button("Save Observation"));
 
     }
 
@@ -98,14 +84,9 @@ public class CreateObservationSteps extends Steps {
         type(conceptAnswer, into(textbox().with(attribute("name", equalTo("valueNumeric")))));
     }
 
-    @When("I click the Save Observation button")
-    public void clickSaveObservationButton() {
-        clickOn(button("Save Observation"));
-    }
-
     @Then("display message Observation saved")
     public void verifySuccessMessage() {
-        assertPresenceOf(div().with(text(containsString("Observation saved"))));
+        waitAndAssertFor(div().with(text(containsString("Observation saved"))));
     }
 
 }

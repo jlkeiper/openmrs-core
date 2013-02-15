@@ -14,28 +14,30 @@
 package org.openmrs.api;
 
 import java.util.List;
+import java.util.Map;
 
 import org.openmrs.Person;
 import org.openmrs.Privilege;
+import org.openmrs.PrivilegeListener;
 import org.openmrs.Role;
 import org.openmrs.User;
 import org.openmrs.annotation.Authorized;
 import org.openmrs.annotation.Logging;
+import org.openmrs.api.context.UserContext;
 import org.openmrs.util.PersonByNameComparator;
 import org.openmrs.util.PrivilegeConstants;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Contains methods pertaining to Users in the system Use:<br/>
  * 
  * <pre>
  * 
+ * 
  * List&lt;User&gt; users = Context.getUserService().getAllUsers();
  * </pre>
  * 
  * @see org.openmrs.api.context.Context
  */
-@Transactional
 public interface UserService extends OpenmrsService {
 	
 	/**
@@ -72,7 +74,6 @@ public interface UserService extends OpenmrsService {
 	 * @throws APIException
 	 * @should fetch user with given userId
 	 */
-	@Transactional(readOnly = true)
 	@Authorized( { PrivilegeConstants.VIEW_USERS })
 	public User getUser(Integer userId) throws APIException;
 	
@@ -86,7 +87,6 @@ public interface UserService extends OpenmrsService {
 	 * @should find object given valid uuid
 	 * @should return null if no object found with given uuid
 	 */
-	@Transactional(readOnly = true)
 	@Authorized( { PrivilegeConstants.VIEW_USERS })
 	public User getUserByUuid(String uuid) throws APIException;
 	
@@ -98,7 +98,6 @@ public interface UserService extends OpenmrsService {
 	 * @throws APIException
 	 * @should get user by username
 	 */
-	@Transactional(readOnly = true)
 	@Authorized( { PrivilegeConstants.VIEW_USERS })
 	public User getUserByUsername(String username) throws APIException;
 	
@@ -110,7 +109,6 @@ public interface UserService extends OpenmrsService {
 	 * @throws APIException
 	 * @should verify that username and system id is unique
 	 */
-	@Transactional(readOnly = true)
 	@Authorized( { PrivilegeConstants.VIEW_USERS })
 	public boolean hasDuplicateUsername(User user) throws APIException;
 	
@@ -123,7 +121,6 @@ public interface UserService extends OpenmrsService {
 	 * @should fetch users assigned given role
 	 * @should not fetch user that does not belong to given role
 	 */
-	@Transactional(readOnly = true)
 	@Authorized( { PrivilegeConstants.VIEW_USERS })
 	public List<User> getUsersByRole(Role role) throws APIException;
 	
@@ -249,7 +246,6 @@ public interface UserService extends OpenmrsService {
 	 * @deprecated use {@link #getAllPrivileges()}
 	 */
 	@Deprecated
-	@Transactional(readOnly = true)
 	public List<Privilege> getPrivileges() throws APIException;
 	
 	/**
@@ -259,14 +255,12 @@ public interface UserService extends OpenmrsService {
 	 * @throws APIException
 	 * @should return all privileges in the system
 	 */
-	@Transactional(readOnly = true)
 	public List<Privilege> getAllPrivileges() throws APIException;
 	
 	/**
 	 * @deprecated use {@link #getAllRoles()}
 	 */
 	@Deprecated
-	@Transactional(readOnly = true)
 	public List<Role> getRoles() throws APIException;
 	
 	/**
@@ -276,14 +270,12 @@ public interface UserService extends OpenmrsService {
 	 * @throws APIException
 	 * @should return all roles in the system
 	 */
-	@Transactional(readOnly = true)
 	public List<Role> getAllRoles() throws APIException;
 	
 	/**
 	 * @deprecated use {@link org.openmrs.Role#getInheritedRoles()}
 	 */
 	@Deprecated
-	@Transactional(readOnly = true)
 	public List<Role> getInheritingRoles(Role role) throws APIException;
 	
 	/**
@@ -339,7 +331,6 @@ public interface UserService extends OpenmrsService {
 	 * @throws APIException
 	 * @should fetch role for given role name
 	 */
-	@Transactional(readOnly = true)
 	public Role getRole(String r) throws APIException;
 	
 	/**
@@ -350,7 +341,6 @@ public interface UserService extends OpenmrsService {
 	 * @should find object given valid uuid
 	 * @should return null if no object found with given uuid
 	 */
-	@Transactional(readOnly = true)
 	public Role getRoleByUuid(String uuid) throws APIException;
 	
 	/**
@@ -360,7 +350,6 @@ public interface UserService extends OpenmrsService {
 	 * @throws APIException
 	 * @should fetch privilege for given name
 	 */
-	@Transactional(readOnly = true)
 	public Privilege getPrivilege(String p) throws APIException;
 	
 	/**
@@ -372,14 +361,12 @@ public interface UserService extends OpenmrsService {
 	 * @should return null if no object found with given uuid
 	 * @should fetch privilege for given uuid
 	 */
-	@Transactional(readOnly = true)
 	public Privilege getPrivilegeByUuid(String uuid) throws APIException;
 	
 	/**
 	 * @deprecated use {@link #getAllUsers()}
 	 */
 	@Deprecated
-	@Transactional(readOnly = true)
 	@Authorized( { PrivilegeConstants.VIEW_USERS })
 	public List<User> getUsers() throws APIException;
 	
@@ -391,7 +378,6 @@ public interface UserService extends OpenmrsService {
 	 * @should fetch all users in the system
 	 * @should not contains any duplicate users
 	 */
-	@Transactional(readOnly = true)
 	@Authorized( { PrivilegeConstants.VIEW_USERS })
 	public List<User> getAllUsers() throws APIException;
 	
@@ -473,7 +459,6 @@ public interface UserService extends OpenmrsService {
 	 * @should return true when given answer matches stored secret answer
 	 * @should return false when given answer does not match the stored secret answer
 	 */
-	@Transactional(readOnly = true)
 	@Logging(ignoredArgumentIndexes = { 1 })
 	public boolean isSecretAnswer(User u, String answer) throws APIException;
 	
@@ -497,7 +482,6 @@ public interface UserService extends OpenmrsService {
 	 * @should fetch all users if nameSearch is empty or null
 	 * @should not fail if roles are searched but name is empty
 	 */
-	@Transactional(readOnly = true)
 	@Authorized( { PrivilegeConstants.VIEW_USERS })
 	public List<User> getUsers(String nameSearch, List<Role> roles, boolean includeVoided) throws APIException;
 	
@@ -505,7 +489,6 @@ public interface UserService extends OpenmrsService {
 	 * @deprecated use {@link #getUsers(String, List, boolean)}
 	 */
 	@Deprecated
-	@Transactional(readOnly = true)
 	@Authorized( { PrivilegeConstants.VIEW_USERS })
 	public List<User> findUsers(String name, List<String> roles, boolean includeVoided) throws APIException;
 	
@@ -513,7 +496,6 @@ public interface UserService extends OpenmrsService {
 	 * @deprecated use {@link #getUsersByName(String, String, boolean)}
 	 */
 	@Deprecated
-	@Transactional(readOnly = true)
 	@Authorized( { PrivilegeConstants.VIEW_USERS })
 	public List<User> findUsers(String givenName, String familyName, boolean includeVoided) throws APIException;
 	
@@ -529,7 +511,6 @@ public interface UserService extends OpenmrsService {
 	 * @should not fetch any voided users when includeVoided is false
 	 * @should not fetch any duplicate users
 	 */
-	@Transactional(readOnly = true)
 	@Authorized( { PrivilegeConstants.VIEW_USERS })
 	public List<User> getUsersByName(String givenName, String familyName, boolean includeRetired) throws APIException;
 	
@@ -543,7 +524,6 @@ public interface UserService extends OpenmrsService {
 	 * @should fetch all accounts for a person when include retired is true
 	 * @should not fetch retired accounts when include retired is false
 	 */
-	@Transactional(readOnly = true)
 	@Authorized( { PrivilegeConstants.VIEW_USERS })
 	public List<User> getUsersByPerson(Person person, boolean includeRetired) throws APIException;
 	
@@ -551,7 +531,6 @@ public interface UserService extends OpenmrsService {
 	 * @deprecated use {@link #getUsers(String, List, boolean)}
 	 */
 	@Deprecated
-	@Transactional(readOnly = true)
 	@Authorized( { PrivilegeConstants.VIEW_USERS })
 	public List<User> getAllUsers(List<Role> roles, boolean includeVoided) throws APIException;
 	
@@ -609,7 +588,6 @@ public interface UserService extends OpenmrsService {
 	 * @since 1.8
 	 * @should return users whose roles inherit requested roles
 	 */
-	@Transactional(readOnly = true)
 	@Authorized( { PrivilegeConstants.VIEW_USERS })
 	public List<User> getUsers(String name, List<Role> roles, boolean includeRetired, Integer start, Integer length)
 	        throws APIException;
@@ -624,8 +602,39 @@ public interface UserService extends OpenmrsService {
 	 * @return the number of users matching the given attributes
 	 * @since 1.8
 	 */
-	@Transactional(readOnly = true)
 	@Authorized( { PrivilegeConstants.VIEW_USERS })
 	public Integer getCountOfUsers(String name, List<Role> roles, boolean includeRetired);
 	
+	/**
+	 * Notifies privilege listener beans about any privilege check.
+	 * <p>
+	 * It is called by {@link UserContext#hasPrivilege(java.lang.String)}.
+	 * 
+	 * @see PrivilegeListener
+	 * @param user the authenticated user or <code>null</code> if not authenticated
+	 * @param privilege the checked privilege
+	 * @param hasPrivilege <code>true</code> if the authenticated user has the required privilege or
+	 *            if it is a proxy privilege
+	 * @since 1.8.4, 1.9.1, 1.10
+	 */
+	public void notifyPrivilegeListeners(User user, String privilege, boolean hasPrivilege);
+	
+	/**
+	 * Saves the current key/value as a user property for the current user.
+	 * 
+	 * @param key the authenticated user's property
+	 * @param value value of the property
+	 * @since 1.10
+	 */
+	@Authorized
+	public User saveUserProperty(String key, String value);
+	
+	/**
+	 * Replaces all user properties with the given map of properties for the current user
+	 * 
+	 * @param properties the authenticated user's properties
+	 * @since 1.10
+	 */
+	@Authorized
+	public User saveUserProperties(Map<String, String> properties);
 }

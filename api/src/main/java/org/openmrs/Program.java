@@ -17,6 +17,7 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
 
+import org.openmrs.annotation.AllowDirectAccess;
 import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.Root;
 
@@ -37,10 +38,12 @@ public class Program extends BaseOpenmrsMetadata implements java.io.Serializable
 	private Concept concept;
 	
 	/**
-	 * Represents the possible outcomes for this program.  The concept should have answers or a memberSet.
+	 * Represents the possible outcomes for this program. The concept should have answers or a
+	 * memberSet.
 	 */
 	private Concept outcomesConcept;
 	
+	@AllowDirectAccess
 	private Set<ProgramWorkflow> allWorkflows = new HashSet<ProgramWorkflow>();
 	
 	// ******************
@@ -54,6 +57,15 @@ public class Program extends BaseOpenmrsMetadata implements java.io.Serializable
 	/** Constructor with id */
 	public Program(Integer programId) {
 		setProgramId(programId);
+	}
+	
+	/**
+	 * Constructor with name
+	 * 
+	 * @since 1.10
+	 */
+	public Program(String name) {
+		setName(name);
 	}
 	
 	// ******************

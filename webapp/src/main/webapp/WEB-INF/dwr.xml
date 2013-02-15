@@ -21,6 +21,7 @@
 		<convert converter="bean" match="org.openmrs.web.dwr.EncounterListItem"/>
 		<convert converter="bean" match="org.openmrs.web.dwr.UserListItem"/>
 		<convert converter="bean" match="org.openmrs.web.dwr.ObsListItem"/>
+		<convert converter="bean" match="org.openmrs.web.dwr.OrderableListItem"/>
 		<convert converter="bean" match="org.openmrs.web.dwr.FormFieldListItem"/>
 		<convert converter="bean" match="org.openmrs.web.dwr.FieldListItem"/>
 		<convert converter="bean" match="org.openmrs.web.dwr.FormListItem"/>
@@ -151,6 +152,7 @@
 			<param name="class" value="org.openmrs.notification.web.dwr.DWRAlertService" />
 			<include method="getAlerts"/>
 			<include method="markAlertRead"/>
+			<include method="createAlert"/>
 		</create>
 		
 		<create creator="new" javascript="DWRPatientSetService">
@@ -184,22 +186,11 @@
 			<include method="voidOrder"/>
 			<include method="discontinueOrder"/>
 			<include method="getDrugOrdersByPatientId"/>
-			<include method="getCurrentDrugOrdersByPatientId"/>
 			<include method="getCompletedDrugOrdersByPatientId"/>
 			<include method="getUnitsByDrugId"/>
-			<include method="getCurrentDrugSet" />
-			<include method="getCurrentDrugOrdersByPatientIdDrugSetId" />
-			<include method="getCompletedDrugSet" />
-			<include method="getCompletedDrugOrdersByPatientIdDrugSetId" />
-			<include method="voidCurrentDrugSet" />
-			<include method="voidCompletedDrugSet" />
-			<include method="discontinueDrugSet" />
-			<include method="getCurrentOtherDrugSet" />
-			<include method="getCurrentOtherDrugOrdersByPatientIdDrugSetId" />
-			<include method="getCompletedOtherDrugSet" />
-			<include method="getCompletedOtherDrugOrdersByPatientIdDrugSetId" />
 			<include method="voidCurrentDrugOrders" />
 			<include method="discontinueCurrentDrugOrders" />
+			<include method="getOrderables"/>
 		</create>
 		
 		<create creator="new" javascript="DWRProgramWorkflowService">
@@ -261,6 +252,7 @@
 			import org.openmrs.web.dwr.DWRPatientService;
 			import org.openmrs.web.dwr.DWRUserService;
 			import org.openmrs.web.dwr.DWRObsService;
+			import org.openmrs.web.dwr.DWROrderService;
 			import org.openmrs.web.dwr.DWRProviderService;
 			import org.openmrs.web.dwr.DWRVisitService;
 			import org.openmrs.notification.web.dwr.DWRMessageService;
@@ -280,7 +272,9 @@
 			DWRConceptService.getConceptReferenceTerm(Integer conceptReferenceTermId);
 			DWRConceptService.createConceptReferenceTerm(String code, Integer conceptSourceId, String name);
 			DWREncounterService.findEncounters(String phrase, boolean includeVoided);
+			DWREncounterService.findEncounters(String phrase, Integer patientId, boolean includeVoided);
 			DWREncounterService.findBatchOfEncounters(String phrase, boolean includeVoided, Integer start, Integer length);
+			DWREncounterService.findBatchOfEncounters(String phrase, Integer patientId, boolean includeVoided, Integer start, Integer length);
 			DWREncounterService.findCountAndEncounters(String phrase, boolean includeVoided, Integer start, Integer length, boolean getMatchCount);
 			DWREncounterService.findCountAndLocations(String phrase, boolean includeRetired, Integer start, Integer length, boolean getMatchCount);
 			DWREncounterService.findBatchOfLocations(String searchValue, boolean includeRetired, Integer start, Integer length);
@@ -291,6 +285,7 @@
 			DWRUserService.getAllUsers(List<String> roles, boolean includeVoided);
 			DWRObsService.getObservations(Integer encounterId);
 			DWRObsService.createObs(Integer patientId, Integer encounterId, Integer conceptId, String valueText, Date obsDate);
+			DWROrderService.getOrderables(String phrase);
 			DWRMessageService.sendFeedback(String sender, String subject, String content);
 			DWRMessageService.sendMessage( String recipients, String sender, String subject, String content );
 			DWRMessageService.sendMessage(String recipients, String sender, String subject, String content);

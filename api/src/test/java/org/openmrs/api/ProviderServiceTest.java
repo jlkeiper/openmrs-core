@@ -100,7 +100,7 @@ public class ProviderServiceTest extends BaseContextSensitiveTest {
 	@Test
 	public void getAllProviders_shouldGetAllProviders() throws Exception {
 		List<Provider> providers = service.getAllProviders();
-		assertEquals(8, providers.size());
+		assertEquals(9, providers.size());
 	}
 	
 	/**
@@ -229,7 +229,7 @@ public class ProviderServiceTest extends BaseContextSensitiveTest {
 	 */
 	@Test
 	public void getProviders_shouldFetchProviderByMatchingQueryStringWithAnyUnVoidedPersonNamesMiddleName() throws Exception {
-		assertEquals(5, service.getProviders("Tes", 0, null, null).size());
+		assertEquals(6, service.getProviders("Tes", 0, null, null).size());
 	}
 	
 	/**
@@ -259,7 +259,7 @@ public class ProviderServiceTest extends BaseContextSensitiveTest {
 	public void purgeProvider_shouldDeleteAProvider() throws Exception {
 		Provider provider = service.getProvider(2);
 		service.purgeProvider(provider);
-		assertEquals(7, Context.getProviderService().getAllProviders().size());
+		assertEquals(8, Context.getProviderService().getAllProviders().size());
 	}
 	
 	/**
@@ -413,7 +413,7 @@ public class ProviderServiceTest extends BaseContextSensitiveTest {
 	@Test
 	public void getProviders_shouldReturnRetiredProvidersByDefault() throws Exception {
 		List<Provider> providers = service.getProviders(null, null, null, null);
-		Assert.assertEquals(8, providers.size());
+		Assert.assertEquals(9, providers.size());
 	}
 	
 	/**
@@ -518,5 +518,28 @@ public class ProviderServiceTest extends BaseContextSensitiveTest {
 		Provider provider = service.getProviderByIdentifier(identifier);
 		
 		Assert.assertTrue(providers.contains(provider));
+	}
+	
+	/**
+	 * @see {@link ProviderService#isProviderIdentifierUnique(Provider)}
+	 */
+	@Test
+	@Verifies(value = "should return true if the identifier is null", method = "isProviderIdentifierUnique(Provider)")
+	public void isProviderIdentifierUnique_shouldReturnTrueIfTheIdentifierIsNull() throws Exception {
+		Provider provider = new Provider();
+		provider.setName("new developer");
+		Assert.assertTrue(service.isProviderIdentifierUnique(provider));
+	}
+	
+	/**
+	 * @see {@link ProviderService#isProviderIdentifierUnique(Provider)}
+	 */
+	@Test
+	@Verifies(value = "should return true if the identifier is a blank string", method = "isProviderIdentifierUnique(Provider)")
+	public void isProviderIdentifierUnique_shouldReturnTrueIfTheIdentifierIsABlankString() throws Exception {
+		Provider provider = new Provider();
+		provider.setName("new developer");
+		provider.setIdentifier("");
+		Assert.assertTrue(service.isProviderIdentifierUnique(provider));
 	}
 }

@@ -1,4 +1,6 @@
-GivenStories: org/openmrs/stories/login_to_website.story,org/openmrs/stories/go_to_admin_page.story
+Scenario: Update person attributes
+
+GivenStories: org/openmrs/stories/go_to_admin_page.story
 
 When I click on the Manage Person Attribute Types link
 And I click on the Birthplace link

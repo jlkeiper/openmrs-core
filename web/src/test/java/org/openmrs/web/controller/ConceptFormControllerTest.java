@@ -30,8 +30,12 @@ import org.openmrs.Concept;
 import org.openmrs.ConceptComplex;
 import org.openmrs.ConceptDescription;
 import org.openmrs.ConceptMap;
+import org.openmrs.ConceptMapType;
 import org.openmrs.ConceptName;
 import org.openmrs.ConceptNumeric;
+import org.openmrs.ConceptReferenceTerm;
+import org.openmrs.ConceptReferenceTermMap;
+import org.openmrs.ConceptSource;
 import org.openmrs.api.ConceptService;
 import org.openmrs.api.context.Context;
 import org.openmrs.test.Verifies;
@@ -42,6 +46,9 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
+
+import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.*;
 
 /**
  * Unit testing for the ConceptFormController.
@@ -456,6 +463,47 @@ public class ConceptFormControllerTest extends BaseWebContextSensitiveTest {
 		Concept actualConcept = cs.getConceptByName("new name");
 		assertNotNull(actualConcept);
 		assertEquals(concept.getConceptId(), actualConcept.getConceptId());
+	}
+
+	/**
+	 * Test removing short name by adding a blank short name
+	 *
+	 * @throws Exception
+	 */
+	@Test
+	public void shouldVoidShortName() throws Exception {
+		final String CONCEPT_NAME = "default concept name";
+
+		ConceptService cs = Context.getConceptService();
+
+		final Concept concept = new Concept();
+		concept.addName(new ConceptName(CONCEPT_NAME, Locale.ENGLISH));
+		concept.setShortName(new ConceptName("shortname", Locale.ENGLISH));
+		cs.saveConcept(concept);
+
+		Concept actualConcept = cs.getConceptByName(CONCEPT_NAME);
+		assertThat(actualConcept.getShortNameInLocale(Locale.ENGLISH), is(notNullValue()));
+		assertThat(actualConcept.getShortNames().size(), greaterThan(0));
+		assertThat(actualConcept.getNames().size(), is(2));
+
+		ConceptFormController conceptFormController = (ConceptFormController) applicationContext.getBean("conceptForm");
+
+		MockHttpServletRequest mockRequest = new MockHttpServletRequest();
+		MockHttpServletResponse response = new MockHttpServletResponse();
+
+		mockRequest.setMethod("POST");
+		mockRequest.setParameter("action", "");
+		mockRequest.setParameter("conceptId", concept.getConceptId().toString());
+		mockRequest.setParameter("shortNamesByLocale[en].name", " ");
+		mockRequest.setParameter("concept.datatype", "1");
+
+		ModelAndView mav = conceptFormController.handleRequest(mockRequest, response);
+		assertNotNull(mav);
+
+		actualConcept = cs.getConceptByName(CONCEPT_NAME);
+		assertThat(actualConcept.getShortNameInLocale(Locale.ENGLISH), is(nullValue()));
+		assertThat(actualConcept.getShortNames().size(), is(0));
+		assertThat(actualConcept.getNames().size(), is(1));
 	}
 	
 	/**
@@ -907,5 +955,64 @@ public class ConceptFormControllerTest extends BaseWebContextSensitiveTest {
 		assertTrue(mav.getModel().isEmpty());
 		
 		assertEquals(initialConceptMappingCount - 1, cs.getConcept(conceptId).getConceptMappings().size());
+	}
+	
+	/**
+	 * @see ConceptFormController#validateConceptUsesPersistedObjects(Concept,BindException)
+	 * @verifies add error if map type is not saved
+	 */
+	@Test
+	public void validateConceptReferenceTermUsesPersistedObjects_shouldAddErrorIfMapTypeIsNotSaved() throws Exception {
+		Concept concept = new Concept();
+		ConceptReferenceTerm term = new ConceptReferenceTerm();
+		term.setName("name");
+		term.setCode("code");
+		term.setConceptSource(new ConceptSource(1));
+		term.addConceptReferenceTermMap(new ConceptReferenceTermMap(new ConceptReferenceTerm(1), new ConceptMapType()));
+		concept.addConceptMapping(new ConceptMap(term, new ConceptMapType(1)));
+		BindException errors = new BindException(concept, "concept");
+		new ConceptFormController().validateConceptUsesPersistedObjects(concept, errors);
+		Assert.assertEquals(1, errors.getErrorCount());
+		Assert.assertEquals(true, errors
+		        .hasFieldErrors("conceptMappings[0].conceptReferenceTerm.conceptReferenceTermMaps[0].conceptMapType"));
+	}
+	
+	/**
+	 * @see ConceptFormController#validateConceptUsesPersistedObjects(Concept,BindException)
+	 * @verifies add error if source is not saved
+	 */
+	@Test
+	public void validateConceptReferenceTermUsesPersistedObjects_shouldAddErrorIfSourceIsNotSaved() throws Exception {
+		Concept concept = new Concept();
+		ConceptReferenceTerm term = new ConceptReferenceTerm();
+		term.setName("name");
+		term.setCode("code");
+		term.setConceptSource(new ConceptSource());
+		term.addConceptReferenceTermMap(new ConceptReferenceTermMap(new ConceptReferenceTerm(1), new ConceptMapType(1)));
+		concept.addConceptMapping(new ConceptMap(term, new ConceptMapType(1)));
+		BindException errors = new BindException(concept, "concept");
+		new ConceptFormController().validateConceptUsesPersistedObjects(concept, errors);
+		Assert.assertEquals(1, errors.getErrorCount());
+		Assert.assertEquals(true, errors.hasFieldErrors("conceptMappings[0].conceptReferenceTerm.conceptSource"));
+	}
+	
+	/**
+	 * @see ConceptFormController#validateConceptUsesPersistedObjects(Concept,BindException)
+	 * @verifies add error if term b is not saved
+	 */
+	@Test
+	public void validateConceptReferenceTermUsesPersistedObjects_shouldAddErrorIfTermBIsNotSaved() throws Exception {
+		Concept concept = new Concept();
+		ConceptReferenceTerm term = new ConceptReferenceTerm();
+		term.setName("name");
+		term.setCode("code");
+		term.setConceptSource(new ConceptSource(1));
+		term.addConceptReferenceTermMap(new ConceptReferenceTermMap(new ConceptReferenceTerm(), new ConceptMapType(1)));
+		concept.addConceptMapping(new ConceptMap(term, new ConceptMapType(1)));
+		BindException errors = new BindException(concept, "concept");
+		new ConceptFormController().validateConceptUsesPersistedObjects(concept, errors);
+		Assert.assertEquals(1, errors.getErrorCount());
+		Assert.assertEquals(true, errors
+		        .hasFieldErrors("conceptMappings[0].conceptReferenceTerm.conceptReferenceTermMaps[0].termB"));
 	}
 }

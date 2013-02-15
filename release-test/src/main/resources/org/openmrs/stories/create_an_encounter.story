@@ -1,3 +1,5 @@
+Scenario: Create an encounter
+
 GivenStories: org/openmrs/stories/go_to_admin_page.story
 
 When I click on the Manage Providers link
@@ -9,7 +11,7 @@ Then the provider should be saved
 When I click on the Administration link
 And I click on the Manage Encounters link
 And I click on the Add Encounter link
-And I enter Horatio L Hornblower, Attending Nurse, Unknown Location, 15/06/2011 00:00, Unknown
+And I enter Horatio L Hornblower, Attending Nurse, Unknown Location, 06/15/2012 00:00, Unknown
 And I save the encounter
 Then the encounter should be saved
 

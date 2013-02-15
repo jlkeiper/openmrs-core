@@ -13,9 +13,11 @@
  */
 package org.openmrs;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -24,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.openmrs.annotation.AllowDirectAccess;
 import org.openmrs.annotation.DisableHandlers;
 import org.openmrs.api.context.Context;
 import org.openmrs.api.handler.VoidHandler;
@@ -59,6 +62,7 @@ public class Encounter extends BaseOpenmrsData implements java.io.Serializable {
 	
 	private Set<Order> orders;
 	
+	@AllowDirectAccess
 	private Set<Obs> obs;
 	
 	private Visit visit;
@@ -267,20 +271,49 @@ public class Encounter extends BaseOpenmrsData implements java.io.Serializable {
 	 * @should set encounter attribute on obs
 	 * @should add obs to non null initial obs set
 	 * @should add encounter attrs to obs if attributes are null
+	 * @should add encounter attrs to obs groupMembers if attributes are null
 	 */
 	public void addObs(Obs observation) {
 		if (obs == null)
 			obs = new HashSet<Obs>();
+		
 		if (observation != null) {
-			observation.setEncounter(this);
-			
-			if (observation.getObsDatetime() == null)
-				observation.setObsDatetime(getEncounterDatetime());
-			if (observation.getPerson() == null)
-				observation.setPerson(getPatient());
-			if (observation.getLocation() == null)
-				observation.setLocation(getLocation());
 			obs.add(observation);
+			
+			//Propagate some attributes to the obs and any groupMembers
+			
+			// a Deque is a two-ended queue, that lets us add to the end, and fetch from the beginning
+			Deque<Obs> obsToUpdate = new ArrayDeque<Obs>();
+			obsToUpdate.add(observation);
+			
+			//prevent infinite recursion if an obs is its own group member
+			Set<Obs> seenIt = new HashSet<Obs>();
+			
+			while (!obsToUpdate.isEmpty()) {
+				Obs o = obsToUpdate.removeFirst();
+				
+				//has this obs already been processed?
+				if (o == null || seenIt.contains(o))
+					continue;
+				seenIt.add(o);
+				
+				o.setEncounter(this);
+				
+				//if the attribute was already set, preserve it
+				//if not, inherit the values sfrom the encounter
+				if (o.getObsDatetime() == null)
+					o.setObsDatetime(getEncounterDatetime());
+				if (o.getPerson() == null)
+					o.setPerson(getPatient());
+				if (o.getLocation() == null)
+					o.setLocation(getLocation());
+				
+				//propagate attributes to  all group members as well
+				if (o.getGroupMembers(true) != null) {
+					obsToUpdate.addAll(o.getGroupMembers());
+				}
+			}
+			
 		}
 	}
 	
@@ -302,7 +335,7 @@ public class Encounter extends BaseOpenmrsData implements java.io.Serializable {
 	 */
 	public Set<Order> getOrders() {
 		if (orders == null) {
-			return new HashSet<Order>();
+			orders = new LinkedHashSet<Order>();
 		}
 		return orders;
 	}
@@ -321,14 +354,13 @@ public class Encounter extends BaseOpenmrsData implements java.io.Serializable {
 	 * @should add order with null values
 	 * @should not fail with null obs passed to add order
 	 * @should set encounter attribute
-	 * @should add order to non nul initial order set
+	 * @should add order to non null initial order set
+	 * @should add order to encounter when adding order to set returned from getOrders
 	 */
 	public void addOrder(Order order) {
-		if (orders == null)
-			orders = new HashSet<Order>();
 		if (order != null) {
 			order.setEncounter(this);
-			orders.add(order);
+			getOrders().add(order);
 		}
 	}
 	
@@ -357,20 +389,55 @@ public class Encounter extends BaseOpenmrsData implements java.io.Serializable {
 	 */
 	public void setPatient(Patient patient) {
 		this.patient = patient;
+		this.patientId = patient.getPersonId();
 	}
 	
 	/**
 	 * @return the patientId
+	 * @deprecated due to duplication. Use Encounter.Patient instead
 	 */
+	@Deprecated
 	public Integer getPatientId() {
 		return patientId;
 	}
 	
 	/**
 	 * @param patientId the patientId to set
+	 * @deprecated due to duplication. Use Encounter.Patient instead
 	 */
+	@Deprecated
 	public void setPatientId(Integer patientId) {
 		this.patientId = patientId;
+	}
+	
+	/**
+	 * Basic property accessor for encounterProviders. The convenience methods getProvidersByRoles
+	 * and getProvidersByRole are the preferred methods for getting providers. This getter is 
+	 * provided as a convenience for treating this like a DTO
+	 * 
+	 * @return list of all existing providers on this encounter
+	 * @see #getProvidersByRole(EncounterRole)
+	 * @see #getProvidersByRoles()
+	 * @since 1.9.1
+	 */
+	public Set<EncounterProvider> getEncounterProviders() {
+		return encounterProviders;
+	}
+	
+	/**
+	 * Basic property setter for encounterProviders. The convenience methods addProvider,
+	 * removeProvider, and setProvider are the preferred methods for adding/removing providers. This
+	 * setter is provided as a convenience for treating this like a DTO
+	 * 
+	 * @param encounterProviders the list of EncounterProvider objects to set. Overwrites list as
+	 *            normal setter is inclined to do
+	 * @see #addProvider(EncounterRole, Provider)
+	 * @see #removeProvider(EncounterRole, Provider)
+	 * @see #setProvider(EncounterRole, Provider)
+	 * @since 1.9.1
+	 */
+	public void setEncounterProviders(Set<EncounterProvider> encounterProviders) {
+		this.encounterProviders = encounterProviders;
 	}
 	
 	/**
@@ -381,14 +448,15 @@ public class Encounter extends BaseOpenmrsData implements java.io.Serializable {
 	 * @should return provider for person
 	 * @should return null if there is no provider for person
 	 * @should return same provider for person if called twice
+	 * @should not return a voided provider
 	 */
 	public Person getProvider() {
 		if (encounterProviders == null || encounterProviders.isEmpty()) {
 			return null;
 		} else {
 			for (EncounterProvider encounterProvider : encounterProviders) {
-				//Return the first person in the list
-				if (encounterProvider.getProvider().getPerson() != null) {
+				// Return the first non-voided provider associated with a person in the list
+				if (!encounterProvider.isVoided() && encounterProvider.getProvider().getPerson() != null) {
 					return encounterProvider.getProvider().getPerson();
 				}
 			}
@@ -589,7 +657,7 @@ public class Encounter extends BaseOpenmrsData implements java.io.Serializable {
 	public void addProvider(EncounterRole role, Provider provider) {
 		// first, make sure the provider isn't already there
 		for (EncounterProvider ep : encounterProviders) {
-			if (ep.getEncounterRole().equals(role) && ep.getProvider().equals(provider))
+			if (ep.getEncounterRole().equals(role) && ep.getProvider().equals(provider) && !ep.isVoided())
 				return;
 		}
 		EncounterProvider encounterProvider = new EncounterProvider();
@@ -622,7 +690,7 @@ public class Encounter extends BaseOpenmrsData implements java.io.Serializable {
 					encounterProvider.setVoided(true);
 					encounterProvider.setDateVoided(new Date());
 					encounterProvider.setVoidedBy(Context.getAuthenticatedUser());
-				} else {
+				} else if (!encounterProvider.isVoided()) {
 					hasProvider = true;
 				}
 			}
@@ -651,4 +719,5 @@ public class Encounter extends BaseOpenmrsData implements java.io.Serializable {
 			}
 		}
 	}
+	
 }

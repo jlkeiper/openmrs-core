@@ -1,13 +1,11 @@
 <%@page isErrorPage="true" %>
 <%@ page import="org.openmrs.web.WebUtil" %>
-<%@ page import="org.openmrs.web.WebConstants" %>
+<%@page import="org.openmrs.web.WebConstants"%>
 <%@ page import="org.openmrs.api.context.UserContext" %>
 <%@ page import="org.openmrs.util.OpenmrsConstants" %>
-<%@ page import="org.openmrs.api.APIAuthenticationException" %>
+<%@page import="org.openmrs.api.APIAuthenticationException"%>
+<%@page import="org.openmrs.api.context.ContextAuthenticationException"%>
 <%@ page import="org.springframework.transaction.UnexpectedRollbackException" %>
-<%@ page import="org.apache.commons.logging.Log" %>
-<%@ page import="org.apache.commons.logging.LogFactory" %>
-<%@ page import="org.openmrs.api.context.Context" %>
 <%@ include file="/WEB-INF/template/include.jsp" %>
 
 <%@ include file="/WEB-INF/template/headerMinimal.jsp" %>
@@ -36,6 +34,36 @@
 			trace.style.display = "none";
 		}
 	}
+
+    function submitErrorReport() {
+        var issue_subject = document.getElementById("issue_subject").value;
+        var submitter_name = document.getElementById("submitter_name").value;
+        var submitter_email = document.getElementById("submitter_email").value;
+        var recent_steps = document.getElementById("recent_steps").value;
+
+        if(issue_subject === ""){
+            alert("Subject is Mandatory.");
+            return false;
+        }
+
+        //Assign subject to errorMessageElement since that is the field that JIRA picks up for Subject & Summary
+        document.getElementById("errorMessageElement").value = issue_subject;
+
+        //Construct a bulk string with remaining user data
+        var user_inputted_data = "";
+        user_inputted_data += "Name: "+ submitter_name + "\n";
+        user_inputted_data += "Email: "+ submitter_email + "\n";
+        user_inputted_data += "Recent Steps:"+ "\n"+ recent_steps + "\n";
+
+        //Attach all user data to the start of the stack-trace so that it shows up in Description Section of JIRA
+        var stackTraceElement = document.getElementById("stackTraceElement");
+        var fullDescription = user_inputted_data + "\n\n"+ stackTraceElement.value;
+        stackTraceElement.value = fullDescription;
+
+        document.forms["errorSubmitForm"].submit();
+
+    }
+
 </script>	
 
 <% 
@@ -43,22 +71,17 @@
 	// If they weren't displayed/removed because of this error, remove them
 	session.removeAttribute(WebConstants.OPENMRS_MSG_ATTR);
 	session.removeAttribute(WebConstants.OPENMRS_ERROR_ATTR); 
-	
+
 try {
 	// The Servlet spec guarantees this attribute will be available
 	//Throwable exception = (Throwable) request.getAttribute("javax.servlet.error.exception"); 
 
 	if (exception != null) {
-		
-        Log log = LogFactory.getLog(this.getClass().getName());                                                            
-        if(Context.getAuthenticatedUser() != null) {
-                log.error("Exception was thrown by user with id="+
-                        Context.getAuthenticatedUser().getUserId(), exception);
-        } else {
-                log.error("Exception was thrown by not authenticated user",
-                        exception);
-        }
-        
+%>
+
+<%@ include file="/WEB-INF/view/authorizationHandlerInclude.jsp" %>
+
+<%       
 		out.println("<b>" + exception.getClass().getName() + "</b>");
 		if (exception.getMessage() != null)
 			out.println("<pre id='exceptionMessage'>" + WebUtil.escapeHTML(exception.getMessage()) + "</pre>");
@@ -67,7 +90,7 @@ try {
 			out.println("<br/><b>Possible cause</b>: A programmer has made an error and forgotten to include a @Transaction(readOnly=true) annotation on a method.<br/>");
 		}
 	}
-	%>
+%>
 	
 	<br /><br />
 	Consult the <a href="<%= request.getContextPath() %>/help.htm">help document</a>. <br />
@@ -84,17 +107,7 @@ try {
 	// page isn't passed through that filter like all other pages	
 	UserContext userContext = (UserContext) session.getAttribute(WebConstants.OPENMRS_USER_CONTEXT_HTTPSESSION_ATTR);
 	if (exception != null) {
-		if (exception instanceof APIAuthenticationException) {
-			// If they are not authorized to use a function
-			session.setAttribute(WebConstants.OPENMRS_ERROR_ATTR, exception.getMessage());
-			String uri = (String)request.getAttribute("javax.servlet.error.request_uri");
-			if (request.getQueryString() != null) {
-				uri = uri + "?" + request.getQueryString();
-			}
-			session.setAttribute(WebConstants.OPENMRS_LOGIN_REDIRECT_HTTPSESSION_ATTR, uri);
-			response.sendRedirect(request.getContextPath() + "/login.htm");
-		}
-		else if (userContext == null || userContext.getAuthenticatedUser() == null) {
+		if (userContext == null || userContext.getAuthenticatedUser() == null) {
 			out.println("You must be logged in to view the stack trace");
 			// print the stack trace to the servlet container's error logs
 			exception.printStackTrace();
@@ -176,8 +189,34 @@ try {
 <br/>
 <openmrs:extensionPoint pointId="org.openmrs.uncaughtException" type="html" />
 
+
+<br/>
+ <b> Found a bug? Please fill out and submit the form below - help us make OpenMRS better software -- Thanks! </b>
+<br/> <br/>
+<table bgcolor="#fafad2" width="70%">
+    <tr>
+        <td width="10%" align="right"> Subject:  </td>
+        <td><input type="text" id="issue_subject" size="40" /> </td>
+    </tr>
+    <tr>
+        <td align="right">Your Name: </td>
+        <td><input type="text" id="submitter_name" size="40"/> </td>
+    </tr>
+    <tr>
+        <td align="right">Your Email: </td>
+        <td><input type="text" id="submitter_email" size="40"/></td>
+    </tr>
+    <tr>
+        <td align="right" valign="top"> Please describe what you were doing when this error occurred:  </td>
+        <td><textarea rows="10" cols="80" id="recent_steps"></textarea> </td>
+    </tr>
+
+</table>
+
+<br/> <br/>
+
 <div>
-The following data will be submitted with the report to enable the team to resolve the problem.
+The following data will also be submitted with the report to enable the team to resolve the problem.
 <ul>
 <li>The error message and stack trace</li>
 <li>OpenMRS version</li>
@@ -190,16 +229,18 @@ The following data will be submitted with the report to enable the team to resol
 
 <div>
 
-<form action="${reportBugUrl}" target="_blank" method="POST">
+<form action="${reportBugUrl}" target="_blank" method="POST" name="errorSubmitForm">
 	<input type="hidden" name="openmrs_version" value="${openmrs_version}" />
 	<input type="hidden" name="server_info" value="${server_info}" />
 	<input type="hidden" name="username" value="${username}" />
 	<input type="hidden" name="implementationId" value="${implementationId}" />
 	<input type="hidden" name="startedModules" value="${startedModules}" />
-	<input type="hidden" name="errorMessage" value="${errorMessage}" />
-	<input type="hidden" name="stackTrace" value="${stackTrace}" />
-	<br/>
-	<input type="submit" value="Report Problem">
+	<input type="hidden" name="errorMessage" id="errorMessageElement" value="${errorMessage}" />
+	<input type="hidden" name="stackTrace" id="stackTraceElement" value="${stackTrace}" />
+
+    <br/>
+
+    <input type="button" onclick="javascript:submitErrorReport()" value="Report Problem">
 </form>
 
 </div>

@@ -739,6 +739,48 @@ public class EncounterTest {
 	}
 	
 	/**
+	 * @see {@link Encounter#addObs(Obs)}
+	 */
+	@Test
+	@Verifies(value = "should add encounter attrs to obs if attributes are null", method = "addObs(Obs)")
+	public void addObs_shouldAddEncounterAttrsToObsGroupMembersIfAttributesAreNull() throws Exception {
+		/// an encounter that will hav the date/location/patient on it
+		Encounter encounter = new Encounter();
+		
+		Date date = new Date();
+		encounter.setEncounterDatetime(date);
+		
+		Location location = new Location(1);
+		encounter.setLocation(location);
+		
+		Patient patient = new Patient(1);
+		encounter.setPatient(patient);
+		
+		// add an obs that doesn't have date/location/patient set on it.
+		Obs obs = new Obs(123);
+		Obs childObs = new Obs(456);
+		obs.addGroupMember(childObs);
+		
+		//check for infinite recursion
+		// childObs-->childObs2   and childObs2-->childObs
+		Obs childObs2 = new Obs(456);
+		childObs.addGroupMember(childObs2);
+		childObs2.addGroupMember(childObs);
+		
+		assertTrue(obs.getGroupMembers() != null && obs.getGroupMembers().size() == 1);
+		
+		encounter.addObs(obs);
+		
+		// check the values of the obs attrs to see if they were added
+		assertTrue(childObs.getObsDatetime().equals(date));
+		assertTrue(childObs.getLocation().equals(location));
+		assertTrue(childObs.getPerson().equals(patient));
+		assertTrue(childObs2.getObsDatetime().equals(date));
+		assertTrue(childObs2.getLocation().equals(location));
+		assertTrue(childObs2.getPerson().equals(patient));
+	}
+	
+	/**
 	 * @see {@link Encounter#addOrder(Order)}
 	 */
 	@Test
@@ -776,8 +818,8 @@ public class EncounterTest {
 	 * @see {@link Encounter#addOrder(Order)}
 	 */
 	@Test
-	@Verifies(value = "should add order to non nul initial order set", method = "addOrder(Order)")
-	public void addOrder_shouldAddOrderToNonNulInitialOrderSet() throws Exception {
+	@Verifies(value = "should add order to non null initial order set", method = "addOrder(Order)")
+	public void addOrder_shouldAddOrderToNonNullInitialOrderSet() throws Exception {
 		Encounter encounter = new Encounter();
 		Set<Order> orderSet = new HashSet<Order>();
 		orderSet.add(new Order(1));
@@ -786,6 +828,19 @@ public class EncounterTest {
 		
 		encounter.addOrder(new Order(2));
 		assertEquals(2, encounter.getOrders().size());
+	}
+	
+	/**
+	 * @see {@link Encounter#getOrders()}
+	 */
+	@Test
+	@Verifies(value = "should add order to encounter when adding order to set returned from getOrders", method = "getOrders()")
+	public void addOrders_shouldAddOrderToEncounterWhenAddingOrderToSetReturnedFromGetOrders() throws Exception {
+		Encounter encounter = new Encounter();
+		Order order = new Order();
+		encounter.getOrders().add(order);
+		
+		assertEquals(1, encounter.getOrders().size());
 	}
 	
 	/**
@@ -939,6 +994,39 @@ public class EncounterTest {
 		
 		//then
 		Assert.assertEquals(person, result);
+	}
+	
+	/**
+	 * @see Encounter#getProvider()
+	 * @verifies should exclude voided providers
+	 */
+	@Test
+	public void getProvider_shouldExcludeVoidedProviders() throws Exception {
+		//given
+		Encounter encounter = new Encounter();
+		EncounterRole role = new EncounterRole();
+		
+		Provider provider = new Provider();
+		Provider anotherProvider = new Provider();
+		
+		Person person = new Person();
+		Person anotherPerson = new Person();
+		
+		provider.setPerson(person);
+		anotherProvider.setPerson(anotherPerson);
+		
+		// add the first provider
+		encounter.setProvider(role, provider);
+		
+		// replace with the second provider
+		encounter.setProvider(role, anotherProvider);
+		
+		//when
+		Person result = encounter.getProvider();
+		
+		//then
+		Assert.assertEquals(anotherPerson, result);
+		
 	}
 	
 	/**
@@ -1190,6 +1278,41 @@ public class EncounterTest {
 		
 		//should contain both the first (voided) and second (non voided) providers
 		Assert.assertTrue(encounter.getProvidersByRole(role, true).containsAll(Arrays.asList(provider1, provider2)));
+	}
+	
+	/**
+	 * @see Encounter#setProvider(EncounterRole,Provider)
+	 * @verifies previously voided provider correctly re-added
+	 */
+	@Test
+	public void setProvider_shouldAddPreviouslyVoidedProviderAgain() throws Exception {
+		//given
+		Encounter encounter = new Encounter();
+		EncounterRole role = new EncounterRole();
+		
+		Provider provider = new Provider();
+		Provider anotherProvider = new Provider();
+		
+		Person person = new Person();
+		Person anotherPerson = new Person();
+		
+		provider.setPerson(person);
+		anotherProvider.setPerson(anotherPerson);
+		
+		// add the first provider
+		encounter.setProvider(role, provider);
+		
+		// replace with the second provider
+		encounter.setProvider(role, anotherProvider);
+		
+		// now replace back with the first provider
+		encounter.setProvider(role, provider);
+		
+		//when
+		Person result = encounter.getProvider();
+		
+		//then
+		Assert.assertEquals(person, result);
 	}
 	
 	/**

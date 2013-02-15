@@ -10,7 +10,7 @@
 			<c:forEach items="${model.layoutTemplate.lines}" var="line">
 				<c:forEach items="${line}" var="token">
 					<c:if test="${token.isToken == model.layoutTemplate.layoutToken}">
-						<th><spring:message code="${token.displayText}"/></th>
+						<th><openmrs:message code="${token.displayText}"/></th>
 					</c:if>
 				</c:forEach>
 			</c:forEach>	
@@ -75,7 +75,7 @@
 												<input type="text" name="${status.expression}" value="${model.layoutTemplate.elementDefaults[token.codeName]}" size="${token.displaySize}" />
 											</c:if>
 											<c:if test="${status.value != null}">
-												<input type="text" name="${status.expression}" value="<c:out value="${status.value}"/>" size="${token.displaySize}" />
+												<input type="text" name="${status.expression}" value="<c:out value="${status.value}" />" size="${token.displaySize}" />
 											</c:if>
 											<c:if test="${model.layoutShowErrors != 'false'}">
 												<c:if test="${status.errorMessage != ''}"><span class="error">${status.errorMessage}</span></c:if>
@@ -99,7 +99,7 @@
 								<c:forEach items="${line}" var="token">
 									<c:if test="${token.isToken == model.layoutTemplate.layoutToken}">
 										<spring:bind path="${token.codeName}">
-											${status.value}
+											<c:out value="${status.value}" />
 										</spring:bind>
 									</c:if>
 									<c:if test="${token.isToken == model.layoutTemplate.nonLayoutToken}">
@@ -123,9 +123,9 @@
 									<td>
 										<c:forEach items="${line}" var="token">
 											<c:if test="${token.isToken == model.layoutTemplate.layoutToken}">
-												<spring:message code="${token.displayText}" />:
+												<openmrs:message code="${token.displayText}" />:
 												<spring:bind path="${token.codeName}">
-													${status.value}
+													<c:out value="${status.value}" />
 												</spring:bind>
 											</c:if>
 											<c:if test="${token.isToken == model.layoutTemplate.nonLayoutToken}">
@@ -145,7 +145,7 @@
 					</c:if>
 					<c:if test="${model.layoutShowExtended == 'true'}">
 							<tr>
-								<td><spring:message code="general.preferred"/></td>
+								<td><openmrs:message code="general.preferred"/></td>
 								<td>
 									<spring:bind path="preferred">
 										<input type="hidden" name="_${status.expression}">
@@ -159,14 +159,14 @@
 								<tr>
 									<c:forEach items="${line}" var="token" varStatus="tokenStatus">
 										<c:if test="${token.isToken == model.layoutTemplate.layoutToken}">
-											<td><spring:message code="${token.displayText}" /></td>
+											<td><openmrs:message code="${token.displayText}" /></td>
 											<td <c:if test="${tokenStatus.last && tokenStatus.index < model.layoutTemplate.maxTokens}">colspan="${model.layoutTemplate.maxTokens - tokenStatus.index}"</c:if>>
 												<spring:bind path="${token.codeName}">
 													<c:if test="${status.value == null}">
 														<input type="text" name="${status.expression}" value="${model.layoutTemplate.elementDefaults[token.codeName]}" size="${token.displaySize}" />
 													</c:if>
 													<c:if test="${status.value != null}">
-														<input type="text" name="${status.expression}" value="${status.value}" size="${token.displaySize}" />
+														<input type="text" name="${status.expression}" value="<c:out value="${status.value}" />" size="${token.displaySize}" />
 													</c:if>
 													<c:if test="${model.layoutShowErrors != 'false'}">
 														<c:if test="${status.errorMessage != ''}"><span class="error">${status.errorMessage}</span></c:if>
@@ -181,7 +181,7 @@
 							<spring:bind path="creator">
 								<c:if test="${!(status.value == null)}">
 									<tr>
-										<td><spring:message code="general.createdBy" /></td>
+										<td><openmrs:message code="general.createdBy" /></td>
 										<td colspan="4">
 											${status.value.personName} -
 											<openmrs:formatDate path="dateCreated" type="long" />
@@ -192,7 +192,7 @@
 							<spring:bind path="changedBy">
 								<c:if test="${!(status.value == null)}">
 									<tr>
-										<td><spring:message code="general.changedBy" /></td>
+										<td><openmrs:message code="general.changedBy" /></td>
 										<td colspan="4">
 											${status.value.personName} -
 											<openmrs:formatDate path="dateChanged" type="long" />
@@ -202,20 +202,20 @@
 							</spring:bind>
                             <c:if test="${model.layoutHideVoidOption != 'true'}">
 								<tr>
-									<td><spring:message code="general.voided"/></td>
+									<td><openmrs:message code="general.voided"/></td>
 									<td>
 										<spring:bind path="voided">
 											<input type="hidden" name="_${status.expression}"/>
 											<input type="checkbox" name="${status.expression}" 
 												   <c:if test="${status.value == true}">checked="checked"</c:if>
-												   onClick="toggleLayer('<spring:bind path="personNameId">voidReasonRow-${status.value}</spring:bind>'); if (voidedBoxClicked) voidedBoxClicked(this); "
+												   onClick="toggleLayer('<spring:bind path="personNameId">voidReasonNameRow-${status.value}</spring:bind>'); if (voidedBoxClicked) voidedBoxClicked(this); "
 											/>
 										</spring:bind>
 									</td>
 								</tr>
-								<tr id="<spring:bind path="personNameId">voidReasonRow-${status.value}</spring:bind>"
+								<tr id="<spring:bind path="personNameId">voidReasonNameRow-${status.value}</spring:bind>"
 									style="<spring:bind path="voided"><c:if test="${status.value == false}">display: none;</c:if></spring:bind>">
-									<td><spring:message code="general.voidReason"/></td>
+									<td><openmrs:message code="general.voidReason"/></td>
 									<spring:bind path="voidReason">
 										<td colspan="4">
 											<input type="text" name="${status.expression}" value="${status.value}" size="43" />
@@ -226,7 +226,7 @@
 								<spring:bind path="voidedBy">
 									<c:if test="${!(status.value == null)}">
 										<tr>
-											<td><spring:message code="general.voidedBy" /></td>
+											<td><openmrs:message code="general.voidedBy" /></td>
 											<td colspan="4">
 												${status.value.personName} -
 												<openmrs:formatDate path="dateVoided" type="long" />
@@ -245,7 +245,7 @@
 		</c:when>
 		
 		<c:otherwise>
-			<spring:message code="Portlet.nameLayout.error" arguments="${model.size}"/>
+			<openmrs:message code="Portlet.nameLayout.error" arguments="${model.size}"/>
 		</c:otherwise>
 	</c:choose>
 </c:if>

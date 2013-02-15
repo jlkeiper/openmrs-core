@@ -1,10 +1,11 @@
+Scenario: Create a patient
+
 GivenStories: org/openmrs/stories/login_to_website.story
 
 Given I am on Home screen
 When I click on the Find/Create Patient link
 Then take me to Find/Create Patient Page with Find Patient as title
 
-Given I am on the Find/Create Patient Page
 When I enter Robert as Name
 And I enter random number as Age
 And I select Male as Gender

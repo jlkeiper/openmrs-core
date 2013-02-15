@@ -77,16 +77,14 @@ public final class OpenmrsConstants {
 	/**
 	 * This holds the current openmrs code version in a short space-less string.<br/>
 	 * The format is:<br/>
-	 * <i>major</i>.<i>minor</i>.<i>maintenance</i>.<i>revision</i>-<i>suffix</i
-	 * >
+	 * <i>major</i>.<i>minor</i>.<i>maintenance</i>.<i>revision</i>-<i>suffix</i >
 	 */
 	public static final String OPENMRS_VERSION_SHORT = THIS_PACKAGE.getSpecificationVersion() != null ? THIS_PACKAGE
 	        .getSpecificationVersion() : getBuildVersionShort();
 	
 	/**
-	 * @return build version with alpha characters (eg:1.10.0 SNAPSHOT Build 24858) 
-	 * defined in MANIFEST.MF(specification-Vendor)
-	 * 
+	 * @return build version with alpha characters (eg:1.10.0 SNAPSHOT Build 24858) defined in
+	 *         MANIFEST.MF(specification-Vendor)
 	 * @see #OPENMRS_VERSION_SHORT
 	 * @see #OPENMRS_VERSION
 	 */
@@ -115,9 +113,8 @@ public final class OpenmrsConstants {
 	}
 	
 	/**
-	 * @return build version without alpha characters (eg: 1.10.0.24858) 
-	 * defined in MANIFEST.MF (specification-Version)
-	 * 
+	 * @return build version without alpha characters (eg: 1.10.0.24858) defined in MANIFEST.MF
+	 *         (specification-Version)
 	 * @see #OPENMRS_VERSION_SHORT
 	 * @see #OPENMRS_VERSION
 	 */
@@ -753,6 +750,8 @@ public final class OpenmrsConstants {
 	
 	public static final String GLOBAL_PROPERTY_USER_HEADER_ATTRIBUTES = "user.headerAttributeTypes";
 	
+	public static final String GLOBAL_PROPERTY_USER_REQUIRE_EMAIL_AS_USERNAME = "user.requireEmailAsUsername";
+	
 	public static final String GLOBAL_PROPERTY_HL7_ARCHIVE_DIRECTORY = "hl7_archive.dir";
 	
 	public static final String GLOBAL_PROPERTY_DEFAULT_THEME = "default_theme";
@@ -767,7 +766,7 @@ public final class OpenmrsConstants {
 	public static final String[] GLOBAL_PROPERTIES_OF_PERSON_ATTRIBUTES = { GLOBAL_PROPERTY_PATIENT_LISTING_ATTRIBUTES,
 	        GLOBAL_PROPERTY_PATIENT_VIEWING_ATTRIBUTES, GLOBAL_PROPERTY_PATIENT_HEADER_ATTRIBUTES,
 	        GLOBAL_PROPERTY_USER_LISTING_ATTRIBUTES, GLOBAL_PROPERTY_USER_VIEWING_ATTRIBUTES,
-	        GLOBAL_PROPERTY_USER_HEADER_ATTRIBUTES };
+	        GLOBAL_PROPERTY_USER_HEADER_ATTRIBUTES, GLOBAL_PROPERTY_USER_REQUIRE_EMAIL_AS_USERNAME };
 	
 	public static final String GLOBAL_PROPERTY_PATIENT_IDENTIFIER_REGEX = "patient.identifierRegex";
 	
@@ -807,6 +806,8 @@ public final class OpenmrsConstants {
 	public static final String GLOBAL_PROPERTY_LOCALE_ALLOWED_LIST = "locale.allowed.list";
 	
 	public static final String GLOBAL_PROPERTY_IMPLEMENTATION_ID = "implementation_id";
+	
+	public static final String GLOBAL_PROPERTY_NEWPATIENTFORM_SHOW_RELATIONSHIPS = "new_patient_form.showRelationships";
 	
 	public static final String GLOBAL_PROPERTY_NEWPATIENTFORM_RELATIONSHIPS = "newPatientForm.relationships";
 	
@@ -937,6 +938,11 @@ public final class OpenmrsConstants {
 	public static final String GP_SEARCH_WIDGET_DELAY_INTERVAL = "searchWidget.searchDelayInterval";
 	
 	/**
+	 * Global property name for the prefix used when creating order numbers.
+	 */
+	public static final String GP_ORDER_ENTRY_ORDER_NUMBER_PREFIX = "orderEntry.orderNumberPrefix";
+	
+	/**
 	 * Global property name for the maximum number of results to return from a single search in the
 	 * search widgets
 	 */
@@ -970,19 +976,39 @@ public final class OpenmrsConstants {
 	public static final String GP_DASHBOARD_MAX_NUMBER_OF_ENCOUNTERS_TO_SHOW = "dashboard.encounters.maximumNumberToShow";
 	
 	/**
-	 * Global property name for the default ConceptMapType which is set automatically when no other is set manually.
+	 * Global property name to display program, workflow and states in a specific case
+	 */
+	public static final String GP_DASHBOARD_METADATA_CASE_CONVERSION = "dashboard.metadata.caseConversion";
+	
+	/**
+	 * Global property name for the default ConceptMapType which is set automatically when no other
+	 * is set manually.
 	 */
 	public static final String GP_DEFAULT_CONCEPT_MAP_TYPE = "concept.defaultConceptMapType";
 	
 	/**
-	 * Global property name of the allowed concept classes for the dosage form field of the concept drug management form.
+	 * Global property name of the allowed concept classes for the dosage form field of the concept
+	 * drug management form.
 	 */
 	public static final String GP_CONCEPT_DRUG_DOSAGE_FORM_CONCEPT_CLASSES = "conceptDrug.dosageForm.conceptClasses";
 	
 	/**
-	 * Global property name of the allowed concept classes for the route field of the concept drug management form.
+	 * Global property name of the allowed concept classes for the route field of the concept drug
+	 * management form.
 	 */
 	public static final String GP_CONCEPT_DRUG_ROUTE_CONCEPT_CLASSES = "conceptDrug.route.conceptClasses";
+	
+	/**
+	 * Global property name of the allowed concept classes for the allergen field of the allergy
+	 * management form.
+	 */
+	public static final String GP_ALLERGY_ALLERGEN_CONCEPT_CLASSES = "allergy.allergen.ConceptClasses";
+	
+	/**
+	 * Global property name of the allowed concept classes for the reaction field of the allergy
+	 * management form.
+	 */
+	public static final String GP_ALLERGY_REACTION_CONCEPT_CLASSES = "allergy.reaction.ConceptClasses";
 	
 	/**
 	 * Encryption properties; both vector and key are required to utilize a two-way encryption
@@ -1002,7 +1028,7 @@ public final class OpenmrsConstants {
 	/**
 	 * Global property name for the visit type(s) to automatically close
 	 */
-	public static final String GP_VISIT_TYPES_TO_AUTO_CLOSE = "autoCloseVisits.visitType";
+	public static final String GP_VISIT_TYPES_TO_AUTO_CLOSE = "visits.autoCloseVisitType";
 	
 	/**
 	 * The name of the scheduled task that automatically stops the active visits
@@ -1012,6 +1038,8 @@ public final class OpenmrsConstants {
 	public static final String GP_CONCEPT_INDEX_UPDATE_TASK_LAST_UPDATED_CONCEPT = "concept.IndexUpdateTask.lastConceptUpdated";
 	
 	public static final String GP_ALLOWED_FAILED_LOGINS_BEFORE_LOCKOUT = "security.allowedFailedLoginsBeforeLockout";
+	
+	public static final String GP_CASE_SENSITIVE_NAMES_IN_CONCEPT_NAME_TABLE = "concept.caseSensitiveNamesInConceptNameTable";
 	
 	/**
 	 * At OpenMRS startup these global properties/default values/descriptions are inserted into the
@@ -1029,7 +1057,7 @@ public final class OpenmrsConstants {
 		        "Indicates whether or not mother's name is able to be added/viewed for a patient", BooleanDatatype.class,
 		        null));
 		
-		props.add(new GlobalProperty("new_patient_form.showRelationships", "false",
+		props.add(new GlobalProperty(GLOBAL_PROPERTY_NEWPATIENTFORM_SHOW_RELATIONSHIPS, "false",
 		        "true/false whether or not to show the relationship editor on the addPatient.htm screen",
 		        BooleanDatatype.class, null));
 		
@@ -1266,6 +1294,12 @@ public final class OpenmrsConstants {
 		                "org.openmrs.api:" + LOG_LEVEL_INFO,
 		                "Logging levels for log4j.xml. Valid format is class:level,class:level. If class not specified, 'org.openmrs.api' presumed. Valid levels are trace, debug, info, warn, error or fatal"));
 		
+		props.add(new GlobalProperty(GP_LOG_LOCATION, "",
+		        "A directory where the OpenMRS log file appender is stored. The log file name is 'openmrs.log'."));
+		
+		props.add(new GlobalProperty(GP_LOG_LAYOUT, "%p - %C{1}.%M(%L) |%d{ISO8601}| %m%n",
+		        "A log layout pattern which is used by the OpenMRS file appender."));
+		
 		props
 		        .add(new GlobalProperty(
 		                GLOBAL_PROPERTY_DEFAULT_PATIENT_IDENTIFIER_VALIDATOR,
@@ -1373,6 +1407,9 @@ public final class OpenmrsConstants {
 		                "START",
 		                "Specifies how patient names are matched while searching patient. Valid values are 'ANYWHERE' or 'START'. Defaults to start if missing or invalid value is present."));
 		
+		props.add(new GlobalProperty(GP_ORDER_ENTRY_ORDER_NUMBER_PREFIX, ORDER_NUMBER_DEFAULT_PREFIX,
+		        "Specifies the prefix used when creating order numbers"));
+		
 		props.add(new GlobalProperty(GP_ENABLE_CONCEPT_MAP_TYPE_MANAGEMENT, "false",
 		        "Enables or disables management of concept map types", BooleanDatatype.class, null));
 		
@@ -1393,7 +1430,7 @@ public final class OpenmrsConstants {
 		        .add(new GlobalProperty(
 		                GP_ENCOUNTER_TYPE_TO_VISIT_TYPE_MAPPING,
 		                "",
-		                "Specifies how encounter types are mapped to visit types when automatically assigning encounters to visits. e.g 1:1, 2:1, 3:2 in the format encounterTypeId:visitTypeId"));
+		                "Specifies how encounter types are mapped to visit types when automatically assigning encounters to visits. e.g 1:1, 2:1, 3:2 in the format encounterTypeId:visitTypeId or encounterTypeUuid:visitTypeUuid or a combination of encounter/visit type uuids and ids e.g 1:759799ab-c9a5-435e-b671-77773ada74e4"));
 		
 		props
 		        .add(new GlobalProperty(
@@ -1426,6 +1463,26 @@ public final class OpenmrsConstants {
 		props
 		        .add(new GlobalProperty(GP_CONCEPT_DRUG_ROUTE_CONCEPT_CLASSES, "",
 		                "A comma-separated list of the allowed concept classes for the route field of the concept drug management form."));
+		
+		props
+		        .add(new GlobalProperty(
+		                GP_CASE_SENSITIVE_NAMES_IN_CONCEPT_NAME_TABLE,
+		                "true",
+		                "Indicates whether names in the concept_name table are case sensitive or not. Setting this to false for MySQL with a case insensitive collation improves search performance."));
+		props
+		        .add(new GlobalProperty(
+		                GP_DASHBOARD_METADATA_CASE_CONVERSION,
+		                "",
+		                "Indicates which type automatic case conversion is applied to program/workflow/state in the patient dashboard. Valid values: lowercase, uppercase, capitalize. If empty no conversion is applied."));
+		
+		props.add(new GlobalProperty(GP_ALLERGY_ALLERGEN_CONCEPT_CLASSES, "Drug,MedSet",
+		        "A comma-separated list of the allowed concept classes for the allergen field of the allergy dialog"));
+		
+		props.add(new GlobalProperty(GP_ALLERGY_REACTION_CONCEPT_CLASSES, "Symptom",
+		        "A comma-separated list of the allowed concept classes for the reaction field of the allergy dialog"));
+		
+		props.add(new GlobalProperty(GLOBAL_PROPERTY_USER_REQUIRE_EMAIL_AS_USERNAME, "false",
+		        "Indicates whether a username must be a valid e-mail or not.", BooleanDatatype.class, null));
 		
 		for (GlobalProperty gp : ModuleFactory.getGlobalProperties()) {
 			props.add(gp);
@@ -1622,6 +1679,27 @@ public final class OpenmrsConstants {
 	// Global property key for global logger level
 	public static final String GLOBAL_PROPERTY_LOG_LEVEL = "log.level";
 	
+	/**
+	 * It points to a directory where 'openmrs.log' is stored.
+	 * 
+	 * @since 1.9.2
+	 */
+	public static final String GP_LOG_LOCATION = "log.location";
+	
+	/**
+	 * It specifies a log layout pattern used by the OpenMRS file appender.
+	 * 
+	 * @since 1.9.2
+	 */
+	public static final String GP_LOG_LAYOUT = "log.layout";
+	
+	/**
+	 * It specifies a default name of the OpenMRS file appender.
+	 * .
+	 * @since 1.9.2
+	 */
+	public static final String LOG_OPENMRS_FILE_APPENDER = "OPENMRS FILE APPENDER";
+	
 	// Global logger category
 	public static final String LOG_CLASS_DEFAULT = "org.openmrs.api";
 	
@@ -1657,6 +1735,9 @@ public final class OpenmrsConstants {
 	
 	public static final String TEXT_VIEW = "TEXT_VIEW";
 	
+	public static final String ORDER_NUMBER_DEFAULT_PREFIX = "OR:";
+	
 	/** The data type to return on failing to load a custom data type. */
 	public static final String DEFAULT_CUSTOM_DATATYPE = FreeTextDatatype.class.getName();
+	
 }

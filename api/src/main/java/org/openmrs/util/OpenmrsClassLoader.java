@@ -622,6 +622,7 @@ public class OpenmrsClassLoader extends URLClassLoader {
 	 * @param libCacheFolder 
 	 */
 	public static void deleteOldLibCaches(File libCacheFolder) {
+		
 		FilenameFilter cacheDirFilter = new FilenameFilter() {
 			
 			@Override
@@ -638,16 +639,18 @@ public class OpenmrsClassLoader extends URLClassLoader {
 		};
 		File tempLocation = libCacheFolder.getParentFile();
 		File[] listFiles = tempLocation.listFiles(cacheDirFilter);
-		for (File cacheDir : listFiles) {
-			//check if it is a directory, but is not the current lib cache
-			if (cacheDir.isDirectory() && !cacheDir.equals(libCacheFolder)) {
-				// check if its not locked by another running openmrs instance
-				if (cacheDir.list(lockFilter).length == 0) {
-					try {
-						OpenmrsUtil.deleteDirectory(cacheDir);
-					}
-					catch (IOException io) {
-						log.warn("Unable to delete: " + cacheDir.getName());
+		if (listFiles != null) {
+			for (File cacheDir : listFiles) {
+				//check if it is a directory, but is not the current lib cache
+				if (cacheDir.isDirectory() && !cacheDir.equals(libCacheFolder)) {
+					// check if its not locked by another running openmrs instance
+					if (cacheDir.list(lockFilter).length == 0) {
+						try {
+							OpenmrsUtil.deleteDirectory(cacheDir);
+						}
+						catch (IOException io) {
+							log.warn("Unable to delete: " + cacheDir.getName());
+						}
 					}
 				}
 			}

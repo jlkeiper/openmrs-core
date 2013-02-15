@@ -13,10 +13,6 @@
  */
 package org.openmrs;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-
 import org.jbehave.core.configuration.Configuration;
 import org.jbehave.core.configuration.MostUsefulConfiguration;
 import org.jbehave.core.embedder.Embedder;
@@ -28,9 +24,13 @@ import org.jbehave.core.reporters.StoryReporterBuilder;
 import org.jbehave.core.steps.CandidateSteps;
 import org.jbehave.core.steps.InstanceStepsFactory;
 import org.openmrs.steps.UniversalSteps;
+import org.openqa.selenium.Dimension;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 public abstract class Story extends JUnitStory {
 
@@ -48,7 +48,7 @@ public abstract class Story extends JUnitStory {
     @Override
     public Embedder configuredEmbedder() {
         Embedder embedder = super.configuredEmbedder();
-        embedder.useEmbedderControls(new EmbedderControls().doIgnoreFailureInStories(true));
+        embedder.useEmbedderControls(new EmbedderControls().doIgnoreFailureInStories(true).useStoryTimeoutInSecs(1200));
         return embedder;
     }
 
@@ -74,7 +74,7 @@ public abstract class Story extends JUnitStory {
 	}
 
     private StoryReporterBuilder createStoryReporter() {
-        return new StoryReporterBuilder().withDefaultFormats().withFormats(Format.HTML, Format.CONSOLE);
+        return new StoryReporterBuilder().withDefaultFormats().withFormats(Format.CONSOLE, Format.XML);
     }
 
     @Override
@@ -85,7 +85,7 @@ public abstract class Story extends JUnitStory {
 	
 	private void createDriver() {
 		this.driver = new FirefoxDriver();
-	    
+        this.driver.manage().window().setSize(new Dimension(1920, 1200));
 		// Use this driver if using Firefox 5.  There is currently a bug in selenium with ff5
 		//this.driver = new ChromeDriver();
 	}

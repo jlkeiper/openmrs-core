@@ -30,6 +30,7 @@ import java.util.Vector;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.openmrs.annotation.AllowDirectAccess;
 import org.openmrs.api.APIException;
 import org.openmrs.api.ConceptNameType;
 import org.openmrs.api.ConceptService;
@@ -99,8 +100,10 @@ public class Concept extends BaseOpenmrsObject implements Auditable, Retireable,
 	
 	private Date dateChanged;
 	
+	@AllowDirectAccess
 	private Collection<ConceptName> names;
 	
+	@AllowDirectAccess
 	private Collection<ConceptAnswer> answers;
 	
 	private Collection<ConceptSet> conceptSets;
@@ -590,7 +593,7 @@ public class Concept extends BaseOpenmrsObject implements Auditable, Retireable,
 			currentNames = getNames(locale);
 		
 		for (ConceptName currentName : currentNames) {
-			if (name.equals(currentName.getName()))
+			if (name.equalsIgnoreCase(currentName.getName()))
 				return true;
 		}
 		
@@ -842,21 +845,28 @@ public class Concept extends BaseOpenmrsObject implements Auditable, Retireable,
 	 * @should set the concept name type of the specified name to short
 	 * @should convert the previous shortName if any to a synonym
 	 * @should add the name to the list of names if it not among them before
+	 * @should void old short name if new one is blank (do not save blanks!)
 	 */
 	public void setShortName(ConceptName shortName) {
-		if (shortName.getLocale() == null)
-			throw new APIException("The locale for a concept name cannot be null");
-		else if (shortName != null && !shortName.isVoided()) {
+		if (shortName != null) {
+            if (shortName.getLocale() == null) {
+                throw new APIException("The locale for a concept name cannot be null");
+            }
 			ConceptName oldShortName = getShortNameInLocale(shortName.getLocale());
-			if (oldShortName != null)
+			if (oldShortName != null) {
 				oldShortName.setConceptNameType(null);
+            }
 			shortName.setConceptNameType(ConceptNameType.SHORT);
-			//add this name, if it is new or not among this concept's names
-			if (shortName.getConceptNameId() == null || !getNames().contains(shortName))
-				addName(shortName);
-		} else
-			throw new APIException("Short name cannot be null or voided");
-	}
+			if (StringUtils.isNotBlank(shortName.getName())) {
+                //add this name, if it is new or not among this concept's names
+                if (shortName.getConceptNameId() == null || !getNames().contains(shortName)) {
+                    addName(shortName);
+                }
+            }
+		} else {
+            throw new APIException("Short name cannot be null");
+        }
+    }
 	
 	/**
 	 * This method is deprecated, it always returns the shortName from the locale with a matching

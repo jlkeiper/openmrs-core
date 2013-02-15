@@ -16,7 +16,10 @@ package org.openmrs.steps;
 import org.jbehave.core.annotations.Then;
 import org.jbehave.core.annotations.When;
 import org.openmrs.Steps;
+import org.openqa.selenium.By;
+import org.openqa.selenium.Keys;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.openqa.selenium.lift.Finders.*;
@@ -41,20 +44,16 @@ public class EditConceptDrugSteps extends Steps {
 	}
 
 	@When("I change $name, $concept, $doseStrength, $units, $maximumDose and $minimumDose")
-	public void editDrug(String name, String concept, String doseStrength, String units, String maximumDose, String minimumDose) {
+	public void editDrug(String name, String concept, String doseStrength, String units, String maximumDose, String minimumDose) throws InterruptedException {
 		//editing $name into name textbox
-		type(name, into(textbox().with(attribute("name", equalTo("name")))));
-		
-		//editing the concept
-		String changeButtonXpath = "//table[@id = 'table']/tbody/tr[2]/td[1]/span[1]/span[1]/input[2]"; //html/body/div/div[3]/form/fieldset/table/tbody/tr[2]/td/span[1]/span[1]/input[2]
-		waitFor(finderByXpath(changeButtonXpath));
-		clickOn(finderByXpath(changeButtonXpath));
-		type(concept, into(textbox().with(attribute("id", equalTo("conceptSearch")))));
-		String conceptSearchXpath = "//table[@class = 'openmrsSearchTable']/tbody/tr[1]/td[2]/a"; //html/body/div/div[3]/form/fieldset/table/tbody/tr[2]/td/span/span[3]/span[2]/table/tbody/tr/td[2]/a/span[2]
-		waitFor(finderByXpath(conceptSearchXpath));
-		clickOn(finderByXpath(conceptSearchXpath));
+		Thread.sleep(2000);
+        type(name, into(textbox().with(attribute("name", equalTo("name")))));
+		type(concept, into(textbox().with(attribute("id", equalTo("concept_selection")))));
+        Thread.sleep(1000);
+        WebElement conceptSelection = driver.findElement(By.id("concept_selection"));
+        conceptSelection.sendKeys(Keys.TAB);
 
-		//editing the combination
+        //editing the combination
 		clickOn(checkbox().with(attribute("name", equalTo("combination"))));
 
 		//editing dose strength

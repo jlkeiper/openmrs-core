@@ -48,6 +48,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -77,8 +78,12 @@ import javax.xml.transform.stream.StreamResult;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.log4j.Appender;
+import org.apache.log4j.FileAppender;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.apache.log4j.PatternLayout;
+import org.apache.log4j.RollingFileAppender;
 import org.openmrs.Cohort;
 import org.openmrs.Concept;
 import org.openmrs.ConceptNumeric;
@@ -421,7 +426,7 @@ public class OpenmrsUtil {
 		
 		// TODO getCorePrivileges() is called so so many times that getClassesWithAnnotation() better do some catching.
 		List<Class<?>> classes = OpenmrsClassScanner.getInstance().getClassesWithAnnotation(HasAddOnStartupPrivileges.class);
-
+		
 		for (Class cls : classes) {
 			Field flds[] = cls.getDeclaredFields();
 			for (Field fld : flds) {
@@ -545,6 +550,7 @@ public class OpenmrsUtil {
 		// set global log level
 		applyLogLevels();
 		
+		setupLogAppenders();
 	}
 	
 	/**
@@ -564,7 +570,47 @@ public class OpenmrsUtil {
 			else
 				applyLogLevel(classAndLevel[0].trim(), classAndLevel[1].trim());
 		}
+	}
+	
+	/**
+	 * Setup root level log appenders.
+	 * 
+	 * @since 1.9.2
+	 */
+	public static void setupLogAppenders() {
+		Logger rootLogger = Logger.getRootLogger();
 		
+		FileAppender fileAppender = null;
+		@SuppressWarnings("rawtypes")
+		Enumeration appenders = rootLogger.getAllAppenders();
+		while (appenders.hasMoreElements()) {
+			Appender appender = (Appender) appenders.nextElement();
+			if (OpenmrsConstants.LOG_OPENMRS_FILE_APPENDER.equals(appender.getName())) {
+				fileAppender = (FileAppender) appender; //the appender already exists
+				break;
+			}
+		}
+		
+		String logLayout = Context.getAdministrationService().getGlobalProperty(OpenmrsConstants.GP_LOG_LAYOUT,
+		    "%p - %C{1}.%M(%L) |%d{ISO8601}| %m%n");
+		PatternLayout patternLayout = new PatternLayout(logLayout);
+		
+		String logLocation = null;
+		try {
+			logLocation = OpenmrsUtil.getOpenmrsLogLocation();
+			if (fileAppender == null) {
+				fileAppender = new RollingFileAppender(patternLayout, logLocation);
+				fileAppender.setName(OpenmrsConstants.LOG_OPENMRS_FILE_APPENDER);
+				rootLogger.addAppender(fileAppender);
+			} else {
+				fileAppender.setFile(logLocation);
+				fileAppender.setLayout(patternLayout);
+			}
+			fileAppender.activateOptions();
+		}
+		catch (IOException e) {
+			log.error("Error while setting an OpenMRS log file to " + logLocation, e);
+		}
 	}
 	
 	/**
@@ -788,10 +834,28 @@ public class OpenmrsUtil {
 		return ret;
 	}
 	
+	/**
+	 * Also see TRUNK-3665
+	 * 
+	 * @deprecated replaced by {@link #delimitedStringToConceptList(String,String)}
+	 */
+	@Deprecated
 	public static List<Concept> delimitedStringToConceptList(String delimitedString, String delimiter, Context context) {
+		return delimitedStringToConceptList(delimitedString, delimiter);
+	}
+	
+	/**
+	 * Parses and loads a delimited list of concept ids or names
+	 * @param delimitedString the delimited list of concept ids or names
+	 * @param delimiter the delimiter, e.g. ","
+	 * @return the list of concepts
+	 * 
+	 * @since 1.10, 1.9.2, 1.8.5
+	 */
+	public static List<Concept> delimitedStringToConceptList(String delimitedString, String delimiter) {
 		List<Concept> ret = null;
 		
-		if (delimitedString != null && context != null) {
+		if (delimitedString != null) {
 			String[] tokens = delimitedString.split(delimiter);
 			for (String token : tokens) {
 				Integer conceptId = null;
@@ -1114,6 +1178,20 @@ public class OpenmrsUtil {
 	}
 	
 	/**
+	 * Returns the location of the OpenMRS log file.
+	 * 
+	 * @return the path to the OpenMRS log file
+	 * @since 1.9.2
+	 */
+	public static String getOpenmrsLogLocation() {
+		String logPathGP = Context.getAdministrationService().getGlobalProperty(OpenmrsConstants.GP_LOG_LOCATION, "");
+		File logPath = OpenmrsUtil.getDirectoryInApplicationDataDirectory(logPathGP);
+		
+		File logFile = new File(logPath, "openmrs.log");
+		return logFile.getPath();
+	}
+	
+	/**
 	 * Checks whether the current JVM version is at least Java 6.
 	 * 
 	 * @throws ApplicationContextException if the current JVM version is earlier than Java 6
@@ -1228,7 +1306,6 @@ public class OpenmrsUtil {
 	
 	public static boolean isConceptInList(Concept concept, List<Concept> list) {
 		boolean ret = false;
-		
 		if (concept != null && list != null) {
 			for (Concept c : list) {
 				if (c.equals(concept)) {
@@ -1871,7 +1948,9 @@ public class OpenmrsUtil {
 	 * @param urlString valid http url to post data to
 	 * @param dataToPost Map<String, String> of key value pairs to post to urlString
 	 * @return response from urlString after posting
+	 * @deprecated use org.openmrs.util.HttpClient
 	 */
+	@Deprecated
 	public static String postToUrl(String urlString, Map<String, String> dataToPost) {
 		OutputStreamWriter wr = null;
 		BufferedReader rd = null;

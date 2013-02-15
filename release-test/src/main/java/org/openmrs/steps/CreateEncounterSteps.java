@@ -18,11 +18,12 @@ import org.jbehave.core.annotations.Then;
 import org.jbehave.core.annotations.When;
 import org.openmrs.Steps;
 import org.openqa.selenium.By;
+import org.openqa.selenium.Keys;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
-import static org.openmrs.Finders.selectbox;
 import static org.openqa.selenium.lift.Finders.*;
 import static org.openqa.selenium.lift.Matchers.attribute;
 import static org.openqa.selenium.lift.Matchers.text;
@@ -33,37 +34,32 @@ public class CreateEncounterSteps extends Steps {
 		super(driver);
 	}
 	
-	@Given("I choose to manage encounters")
-	public void manageEncounters() {
-		clickOn(link().with(text(containsString("Manage Encounters"))));
-	}
-
-	@When("I choose to add an encounter")
-	public void addEncounter() {
-		clickOn(link().with(text(equalTo("Add Encounter"))));
-	}
-	
 	@When("I enter $name, $provider, $location, $date, $providerRole")
-	public void enterDetails(String name, String provider, String location, String date, String providerRole) {
-		type(name, into(textbox().with(attribute("id", equalTo("patientId_id_selection")))));
+	public void enterDetails(String name, String provider, String location, String date, String providerRole) throws InterruptedException {
+		Thread.sleep(2000);
+        type(name, into(textbox().with(attribute("id", equalTo("patientId_id_selection")))));
         String autoCompleteXPath = "//ul[@class='ui-autocomplete ui-menu ui-widget ui-widget-content ui-corner-all']";
         waitFor(finderByXpath(autoCompleteXPath));
-        type(location, into(selectbox().with(attribute("id", equalTo("location")))));
+        clickOn(finderByXpath(autoCompleteXPath));
+
+        selectFrom(location, "location");
         type(date, into(textbox().with(attribute("name", equalTo("encounterDatetime")))));
         clickOn(textbox().with(attribute("name", equalTo("encounterDatetime"))));
         getWebDriver().findElement(By.id("addProviderButton")).click();
-		type(providerRole, into(selectbox().with(attribute("id", equalTo("roleIds[0]")))));
+        selectFrom(providerRole, "roleIds[0]");
         type(provider, into(textbox().with(attribute("id", equalTo("providers[0]")))));
+        WebElement providerElement = driver.findElement(By.id("providers[0]"));
+        providerElement.sendKeys(Keys.TAB);
 	}
 
 	@When("I save the encounter")
 	public void saveEncounter() {
-		clickOn(button("Save Encounter"));
+		waitAndClickOn(button("Save Encounter"));
 	}
 	
 	@Then("the encounter should be saved")
 	public void verifySavedEncounter() {
-		assertPresenceOf(div().with(text(containsString("Encounter saved"))));
+        waitAndAssertFor(div().with(text(containsString("Encounter saved"))));
 	}
 	
 }

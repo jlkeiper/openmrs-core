@@ -16,12 +16,14 @@ package org.openmrs.api.context;
 import org.openmrs.api.APIAuthenticationException;
 import org.openmrs.api.APIException;
 import org.openmrs.api.OpenmrsService;
+import org.openmrs.module.DaemonToken;
 import org.openmrs.module.Module;
 import org.openmrs.module.ModuleException;
 import org.openmrs.module.ModuleFactory;
 import org.openmrs.scheduler.Task;
 import org.openmrs.scheduler.timer.TimerSchedulerTask;
 import org.openmrs.util.OpenmrsSecurityManager;
+import org.springframework.context.support.AbstractRefreshableApplicationContext;
 
 /**
  * This class allows certain tasks to run with elevated privileges. Primary use is scheduling and
@@ -37,15 +39,27 @@ public class Daemon {
 	protected static final ThreadLocal<Boolean> isDaemonThread = new ThreadLocal<Boolean>();
 	
 	/**
+	 * @see #startModule(Module, boolean, AbstractRefreshableApplicationContext)
+	 */
+	public static Module startModule(Module module) throws ModuleException {
+		return startModule(module, false, null);
+	}
+	
+	/**
 	 * This method should not be called directly. The {@link ModuleFactory#startModule(Module)}
 	 * method uses this to start the given module in a new thread that is authenticated as the
-	 * daemon user
+	 * daemon user. <br/>
+	 * If a non null application context is passed in, it gets refreshed to make the module's
+	 * services available
 	 * 
 	 * @param module the module to start
+	 * @param isOpenmrsStartup Specifies whether this module is being started at application startup
+	 *            or not
+	 * @param applicationContext the spring application context instance to refresh
 	 * @returns the module returned from {@link ModuleFactory#startModuleInternal(Module)}
 	 */
-	public static Module startModule(final Module module) throws ModuleException {
-		
+	public static Module startModule(final Module module, final boolean isOpenmrsStartup,
+	        final AbstractRefreshableApplicationContext applicationContext) throws ModuleException {
 		// create a new thread and execute that task in it
 		DaemonThread startModuleThread = new DaemonThread() {
 			
@@ -54,7 +68,7 @@ public class Daemon {
 				isDaemonThread.set(true);
 				try {
 					Context.openSession();
-					returnedObject = ModuleFactory.startModuleInternal(module);
+					returnedObject = ModuleFactory.startModuleInternal(module, isOpenmrsStartup, applicationContext);
 				}
 				catch (Throwable t) {
 					exceptionThrown = t;
@@ -82,8 +96,9 @@ public class Daemon {
 				throw new ModuleException("Unable to start module as Daemon", startModuleThread.exceptionThrown);
 		}
 		
-		return (Module) startModuleThread.returnedObject;
+		Module startedModule = (Module) startModuleThread.returnedObject;
 		
+		return startedModule;
 	}
 	
 	/**
@@ -238,10 +253,14 @@ public class Daemon {
 	 * Executes the given runnable in a new thread that is authenticated as the daemon user.
 	 * 
 	 * @param runnable an object implementing the {@link Runnable} interface.
+	 * @param token the token required to run code as the daemon user
 	 * @return the newly spawned {@link Thread}
-	 * @since 1.9
+	 * @since 1.9.2
 	 */
-	public static Thread runInDaemonThread(final Runnable runnable) {
+	public static Thread runInDaemonThread(final Runnable runnable, DaemonToken token) {
+		if (!ModuleFactory.isTokenValid(token)) {
+			throw new ContextAuthenticationException("Invalid token " + token);
+		}
 		
 		DaemonThread thread = new DaemonThread() {
 			
@@ -260,6 +279,26 @@ public class Daemon {
 		
 		thread.start();
 		return thread;
+	}
+	
+	/**
+	 * Executes the given runnable in a new thread that is authenticated as the daemon user and wait
+	 * for the thread to finish.
+	 * 
+	 * @param runnable an object implementing the {@link Runnable} interface.
+	 * @param token the token required to run code as the daemon user
+	 * @return the newly spawned {@link Thread}
+	 * @since 1.9.2
+	 */
+	public static void runInDaemonThreadAndWait(final Runnable runnable, DaemonToken token) {
+		Thread daemonThread = runInDaemonThread(runnable, token);
+		
+		try {
+			daemonThread.join();
+		}
+		catch (InterruptedException e) {
+			//Ignore
+		}
 	}
 	
 	/**

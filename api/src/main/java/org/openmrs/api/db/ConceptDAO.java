@@ -34,7 +34,6 @@ import org.openmrs.ConceptReferenceTerm;
 import org.openmrs.ConceptReferenceTermMap;
 import org.openmrs.ConceptSearchResult;
 import org.openmrs.ConceptSet;
-import org.openmrs.ConceptSetDerived;
 import org.openmrs.ConceptSource;
 import org.openmrs.ConceptStopWord;
 import org.openmrs.ConceptWord;
@@ -124,6 +123,8 @@ public interface ConceptDAO {
 	 * @see ConceptService#getConcepts(String, List, boolean, List, List, List, List, Concept,
 	 *      Integer, Integer)
 	 * @throws DAOException
+	 * @should return correct results for concept with names that contains words with more weight
+	 * @should return correct results if a concept name contains same word more than once
 	 */
 	public List<ConceptSearchResult> getConcepts(String phrase, List<Locale> locales, boolean includeRetired,
 	        List<ConceptClass> requireClasses, List<ConceptClass> excludeClasses, List<ConceptDatatype> requireDatatypes,
@@ -217,16 +218,6 @@ public interface ConceptDAO {
 	public void purgeConceptDatatype(ConceptDatatype cd) throws DAOException;
 	
 	/**
-	 * @see org.openmrs.api.ConceptService#updateConceptSetDerived(org.openmrs.Concept)
-	 */
-	public void updateConceptSetDerived(Concept concept) throws DAOException;
-	
-	/**
-	 * @see org.openmrs.api.ConceptService#updateConceptSetDerived()
-	 */
-	public void updateConceptSetDerived() throws DAOException;
-	
-	/**
 	 * @see org.openmrs.api.ConceptService#getConceptSetsByConcept(org.openmrs.Concept)
 	 */
 	public List<ConceptSet> getConceptSetsByConcept(Concept c) throws DAOException;
@@ -243,6 +234,7 @@ public interface ConceptDAO {
 	
 	/**
 	 * @see org.openmrs.api.ConceptService#getConceptsByAnswer(org.openmrs.Concept)
+	 * @should return concepts for the given answer concept
 	 */
 	public List<Concept> getConceptsByAnswer(Concept concept) throws DAOException;
 	
@@ -369,8 +361,6 @@ public interface ConceptDAO {
 	public ConceptName getConceptNameByUuid(String uuid);
 	
 	public ConceptSet getConceptSetByUuid(String uuid);
-	
-	public ConceptSetDerived getConceptSetDerivedByUuid(String uuid);
 	
 	public ConceptSource getConceptSourceByUuid(String uuid);
 	

@@ -28,12 +28,14 @@ import javax.mail.PasswordAuthentication;
 import javax.mail.Session;
 
 import org.aopalliance.aop.Advice;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.openmrs.GlobalProperty;
 import org.openmrs.Privilege;
 import org.openmrs.Role;
 import org.openmrs.User;
+import org.openmrs.api.APIAuthenticationException;
 import org.openmrs.api.APIException;
 import org.openmrs.api.ActiveListService;
 import org.openmrs.api.AdministrationService;
@@ -152,7 +154,7 @@ public class Context {
 	
 	// A place to store data that will persist longer than a session, but won't
 	// persist beyond application restart
-	// TODO: put an optional expire date on these items
+	@Deprecated
 	private static Map<User, Map<String, Object>> volatileUserData = new WeakHashMap<User, Map<String, Object>>();
 	
 	/**
@@ -675,8 +677,18 @@ public class Context {
 	 * @throws ContextAuthenticationException
 	 */
 	public static void requirePrivilege(String privilege) throws ContextAuthenticationException {
-		if (!hasPrivilege(privilege))
-			throw new ContextAuthenticationException();
+		if (!hasPrivilege(privilege)) {
+			String errorMessage = null;
+			if (StringUtils.isNotBlank(privilege)) {
+				errorMessage = Context.getMessageSourceService().getMessage("error.privilegesRequired",
+				    new Object[] { privilege }, null);
+			} else {
+				//Should we even be here if the privilege is blank?
+				errorMessage = Context.getMessageSourceService().getMessage("error.privilegesRequiredNoArgs");
+			}
+			
+			throw new ContextAuthenticationException(errorMessage);
+		}
 	}
 	
 	/**
@@ -733,6 +745,27 @@ public class Context {
 		clearUserContext(); // because we set a UserContext on the current
 		// thread in openSession()
 		getContextDAO().closeSession();
+	}
+	
+	/**
+	 * Used to define a unit of work which does not require clearing out the currently authenticated user. 
+	 * Remember to call closeSessionWithCurrentUser in a, preferably, finally block after this work.
+	 * 
+	 * @since 1.10
+	 */
+	public static void openSessionWithCurrentUser() {
+		getContextDAO().openSession();
+	}
+	
+	/**
+	 * Used when the a unit of work which started with a call for openSessionWithCurrentUser has finished.
+	 * This should be in a, preferably, finally block.
+	 * 
+	 * @since 1.10
+	 */
+	public static void closeSessionWithCurrentUser() {
+		getContextDAO().closeSession();
+		;
 	}
 	
 	/**
@@ -1121,10 +1154,11 @@ public class Context {
 	 * @param key identifying string for the information
 	 * @return the information stored
 	 */
+	@Deprecated
 	public static Object getVolatileUserData(String key) {
 		User u = getAuthenticatedUser();
 		if (u == null)
-			return null;
+			throw new APIAuthenticationException();
 		Map<String, Object> myData = volatileUserData.get(u);
 		if (myData == null)
 			return null;
@@ -1135,15 +1169,16 @@ public class Context {
 	/**
 	 * Set a piece of information for the currently authenticated user. This information is stored
 	 * only temporarily. When a new module is loaded or the server is restarted, this information
-	 * will disappear TODO: This needs to be refactored/removed
+	 * will disappear 
 	 * 
 	 * @param key identifying string for this information
 	 * @param value information to be stored
 	 */
+	@Deprecated
 	public static void setVolatileUserData(String key, Object value) {
 		User u = getAuthenticatedUser();
-		if (u == null) // TODO: throw something here
-			return;
+		if (u == null)
+			throw new APIAuthenticationException();
 		Map<String, Object> myData = volatileUserData.get(u);
 		if (myData == null) {
 			myData = new HashMap<String, Object>();
@@ -1165,9 +1200,9 @@ public class Context {
 	}
 	
 	/**
-	 * Gets the simple time format for the current user's locale. The format will be similar
-	 * to hh:mm a
-	 *
+	 * Gets the simple time format for the current user's locale. The format will be similar to
+	 * hh:mm a
+	 * 
 	 * @return SimpleDateFormat for the user's current locale
 	 * @see org.openmrs.util.OpenmrsUtil#getTimeFormat(Locale)
 	 * @should return a pattern with two h characters in it
@@ -1177,9 +1212,9 @@ public class Context {
 	}
 	
 	/**
-	 * Gets the simple datetime format for the current user's locale. The format will be similar
-	 * to mm/dd/yyyy hh:mm a
-	 *
+	 * Gets the simple datetime format for the current user's locale. The format will be similar to
+	 * mm/dd/yyyy hh:mm a
+	 * 
 	 * @return SimpleDateFormat for the user's current locale
 	 * @see org.openmrs.util.OpenmrsUtil#getDateTimeFormat(Locale)
 	 * @should return a pattern with four y characters and two h characters in it
@@ -1267,5 +1302,21 @@ public class Context {
 		Properties props = new Properties();
 		props.putAll(configProperties);
 		return props;
+	}
+	
+	/**
+	 * @see org.openmrs.api.context.ServiceContext#setUseSystemClassLoader(boolean)
+	 * @since 1.10
+	 */
+	public static void setUseSystemClassLoader(boolean useSystemClassLoader) {
+		getServiceContext().setUseSystemClassLoader(useSystemClassLoader);
+	}
+	
+	/**
+	 * @see org.openmrs.api.context.ServiceContext#isUseSystemClassLoader()
+	 * @since 1.10
+	 */
+	public static boolean isUseSystemClassLoader() {
+		return getServiceContext().isUseSystemClassLoader();
 	}
 }

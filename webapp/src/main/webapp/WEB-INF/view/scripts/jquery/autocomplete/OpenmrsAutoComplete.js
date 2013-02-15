@@ -11,7 +11,7 @@
  *			select: function(event, ui) {
  *				$j('#person_name_id').val(ui.item.object.personId);
  *			},
- *          placeholder:'<spring:message code="Person.search.placeholder" javaScriptEscape="true"/>'
+ *          placeholder:'<openmrs:message code="Person.search.placeholder" javaScriptEscape="true"/>'
  *		});
  * 
  * General options:
@@ -33,6 +33,17 @@ function CreateCallback(options) {
 	
 	// this will be the unique incrementing number assigned to the most recent query
 	this.searchCounter = 0;
+	
+	/**
+	 * Use this method if searching for orderables
+	 */
+	this.orderableCallback = function() { var thisObject = this; return function(q, response) {
+		if (jQuery.trim(q).length == 0)
+			return response(false);
+		
+		thisObject.searchCounter += 1;
+		DWROrderService.getOrderables(q, thisObject.makeRows(q, response, thisObject.searchCounter, thisObject.displayOrderable));
+	}}
 	
 	/**
 	 * Use this method if searching for general person objects
@@ -131,7 +142,7 @@ function CreateCallback(options) {
 		
 		// do NOT return false if no text given, instead should return all answers
 		thisObject.searchCounter += 1;
-		DWREncounterService.findEncounters(q, false, thisObject.makeRows(q, response, thisObject.searchCounter, thisObject.displayEncounter));
+		DWREncounterService.findBatchOfEncounters(q, options.patientId, false, null, maxresults, thisObject.makeRows(q, response, thisObject.searchCounter, thisObject.displayEncounter));
 	}}
 	
 	/**
@@ -346,6 +357,31 @@ function CreateCallback(options) {
 		value = enc.location + " - " + enc.encounterDateString;
 		
 		return { label: textShown, value: value, object: enc};
+	}; };
+	
+	// a 'private' method
+	// This is what maps each OrderableListItem returned object to a name in the dropdown
+	this.displayOrderable = function(origQuery) { return function(item) {
+		// dwr sometimes puts strings into the results, just display those
+		if (typeof item == 'string')
+			return { label: item, value: "" };
+		
+		// item is an OrderableListItem object
+		// add a space so the term highlighter below thinks the first word is a word
+		var textShown = " " + item.name;
+		
+		// highlight each search term in the results
+		textShown = highlightWords(textShown, origQuery);
+		
+		var value = item.name;
+		if (item.preferredName) {
+			textShown += "<span class='preferredname'> &rArr; " + item.preferredName + "</span>";
+			//value = item.preferredName;
+		}
+		
+		textShown = "<span class='autocompleteresult'>" + textShown + "</span>";
+		
+		return { label: textShown, value: value, object: item};
 	}; };
 	
 	/*

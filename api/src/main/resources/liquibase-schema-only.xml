@@ -585,8 +585,14 @@
             <column name="date_retired" type="DATETIME"/>
             <column name="retire_reason" type="varchar(255)"/>
             <column name="uuid" type="char(38)" />
+			<column name="edit_privilege" type="varchar(255)">
+				<constraints nullable="true"/>
+			</column>
+			<column name="view_privilege" type="varchar(255)">
+				<constraints nullable="true"/>
+			</column>
         </createTable>
-        <modifySql dbms="mssql">
+		<modifySql dbms="mssql">
                 <replace replace="CHAR(38)" with="UNIQUEIDENTIFIER NOT NULL DEFAULT NEWSEQUENTIALID()" />
         </modifySql>
     </changeSet>
@@ -1415,7 +1421,7 @@
             <column name="retired_by" type="int"/>
             <column name="date_retired" type="DATETIME"/>
             <column name="retire_reason" type="varchar(255)"/>
-            <column name="edit_privilege" type="varchar(50)"/>
+            <column name="edit_privilege" type="varchar(255)"/>
             <column name="sort_weight" type="double precision"/>
             <column name="uuid" type="char(38)" />
         </createTable>
@@ -1464,7 +1470,7 @@
     </changeSet>
     <changeSet author="ben (generated)" id="1227303685425-56">
         <createTable tableName="privilege">
-            <column defaultValue="" name="privilege" type="varchar(50)">
+            <column defaultValue="" name="privilege" type="varchar(255)">
                 <constraints nullable="false" primaryKey="true"/>
             </column>
             <column defaultValue="" name="description" type="varchar(250)">
@@ -1717,7 +1723,7 @@
             <column defaultValue="" name="role" type="varchar(50)">
                 <constraints nullable="false"/>
             </column>
-            <column defaultValue="" name="privilege" type="varchar(50)">
+            <column defaultValue="" name="privilege" type="varchar(255)">
                 <constraints nullable="false"/>
             </column>
         </createTable>
@@ -3413,6 +3419,12 @@
     <changeSet id="20110915-1536" author="sunbiz">
         <addForeignKeyConstraint constraintName="mapped_concept_reference_term" referencedTableName="concept_reference_term" referencedColumnNames="concept_reference_term_id" baseTableName="concept_reference_map" baseColumnNames="concept_reference_term_id"/>
     </changeSet>
+    <changeSet id="20120529-2230" author="mvorobey">
+        <addForeignKeyConstraint constraintName="privilege_which_can_view_encounter_type" baseTableName="encounter_type" baseColumnNames="view_privilege" referencedTableName="privilege" referencedColumnNames="privilege"/>
+	</changeSet>
+	<changeSet id="20120529-2231" author="mvorobey">
+        <addForeignKeyConstraint constraintName="privilege_which_can_edit_encounter_type" baseTableName="encounter_type" baseColumnNames="edit_privilege" referencedTableName="privilege" referencedColumnNames="privilege"/>
+	</changeSet>
     
     <!-- Skip changesets from liquibase-update-to-latest when new installation -->
     <!-- TODO: CustomChange to avoid replicated columns-->
@@ -3563,4 +3575,5 @@
             <column name="exectype" value="MARK_RAN"/>
         </insert>
     </changeSet>
+    
 </databaseChangeLog>

@@ -17,8 +17,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.openmrs.ConceptReferenceTerm;
 import org.openmrs.ConceptReferenceTermMap;
 import org.openmrs.annotation.Handler;
@@ -37,9 +35,6 @@ import org.springframework.validation.Validator;
 @Handler(supports = { ConceptReferenceTerm.class }, order = 50)
 public class ConceptReferenceTermValidator implements Validator {
 	
-	// Log for this class
-	private static final Log log = LogFactory.getLog(ConceptReferenceTermValidator.class);
-	
 	/**
 	 * Determines if the command object being submitted is a valid type
 	 * 
@@ -57,7 +52,6 @@ public class ConceptReferenceTermValidator implements Validator {
 	 *      org.springframework.validation.Errors)
 	 * @should fail if the concept reference term object is null
 	 * @should fail if the name is a white space character
-	 * @should fail if the concept reference term name is a duplicate in its concept source
 	 * @should fail if the code is null
 	 * @should fail if the code is an empty string
 	 * @should fail if the code is a white space character
@@ -67,8 +61,6 @@ public class ConceptReferenceTermValidator implements Validator {
 	 * @should pass if the duplicate name is for a term from another concept source
 	 * @should pass if the duplicate code is for a term from another concept source
 	 * @should fail if a concept reference term map has no concept map type
-	 * @should fail if a mapped concept reference term does not exist in the database
-	 * @should fail if a mapped concept map type does not exist in the database
 	 * @should fail if termB of a concept reference term map is not set
 	 * @should fail if a term is mapped to itself
 	 * @should fail if a term is mapped multiple times to the same term
@@ -80,14 +72,7 @@ public class ConceptReferenceTermValidator implements Validator {
 			        + ConceptReferenceTerm.class);
 		
 		ConceptReferenceTerm conceptReferenceTerm = (ConceptReferenceTerm) obj;
-		String name = conceptReferenceTerm.getName();
-		//For now accept empty name fields concept reference terms
-		/*if (!StringUtils.hasText(name)) {
-			errors.rejectValue("name", "ConceptReferenceTerm.error.nameRequired",
-			    "The name property is required for a concept reference term");
-			log.warn("The name property is required for a concept reference term");
-			return;
-		}*/
+		
 		String code = conceptReferenceTerm.getCode();
 		if (!StringUtils.hasText(code)) {
 			errors.rejectValue("code", "ConceptReferenceTerm.error.codeRequired",
@@ -98,23 +83,6 @@ public class ConceptReferenceTermValidator implements Validator {
 			errors.rejectValue("conceptSource", "ConceptReferenceTerm.error.sourceRequired",
 			    "The conceptSource property is required for a concept reference term");
 			return;
-		} else if (conceptReferenceTerm.getConceptSource().getId() == null) {
-			errors.rejectValue("conceptSource", "ConceptReferenceTerm.source.notInDatabase",
-			    "Only existing concept reference sources can be used");
-			return;
-		}
-		
-		if (StringUtils.hasText(name)) {
-			name = name.trim();
-			//Ensure that there are no terms with the same name in the same source
-			ConceptReferenceTerm termWithDuplicateName = Context.getConceptService().getConceptReferenceTermByName(name,
-			    conceptReferenceTerm.getConceptSource());
-			if (termWithDuplicateName != null) {
-				if (!OpenmrsUtil.nullSafeEquals(termWithDuplicateName.getId(), conceptReferenceTerm.getId())) {
-					errors.rejectValue("name", "ConceptReferenceTerm.duplicate.name",
-					    "Duplicate concept reference term name: " + name);
-				}
-			}
 		}
 		
 		code = code.trim();
@@ -131,7 +99,7 @@ public class ConceptReferenceTermValidator implements Validator {
 		//validate the concept reference term maps
 		if (CollectionUtils.isNotEmpty(conceptReferenceTerm.getConceptReferenceTermMaps())) {
 			int index = 0;
-			Set<Integer> mappedTermIds = null;
+			Set<String> mappedTermUuids = null;
 			for (ConceptReferenceTermMap map : conceptReferenceTerm.getConceptReferenceTermMaps()) {
 				if (map == null)
 					throw new APIException("Cannot add a null concept reference term map");
@@ -139,15 +107,9 @@ public class ConceptReferenceTermValidator implements Validator {
 				if (map.getConceptMapType() == null) {
 					errors.rejectValue("conceptReferenceTermMaps[" + index + "].conceptMapType",
 					    "ConceptReferenceTerm.error.mapTypeRequired", "Concept Map Type is required");
-				} else if (map.getConceptMapType().getId() == null) {
-					errors.rejectValue("conceptReferenceTermMaps[" + index + "].conceptMapType",
-					    "ConceptReferenceTerm.mapType.notInDatabase", "Only existing concept map types can be used");
 				} else if (map.getTermB() == null) {
 					errors.rejectValue("conceptReferenceTermMaps[" + index + "].termB",
 					    "ConceptReferenceTerm.error.termBRequired", "Mapped Term is required");
-				} else if (map.getTermB().getId() == null) {
-					errors.rejectValue("conceptReferenceTermMaps[" + index + "].termB",
-					    "ConceptReferenceTerm.term.notInDatabase", "Only existing concept reference terms can be mapped");
 				} else if (map.getTermB().equals(conceptReferenceTerm)) {
 					errors.rejectValue("conceptReferenceTermMaps[" + index + "].termB", "ConceptReferenceTerm.map.sameTerm",
 					    "Cannot map a concept reference term to itself");
@@ -157,11 +119,11 @@ public class ConceptReferenceTermValidator implements Validator {
 				if (errors.hasErrors())
 					return;
 				
-				if (mappedTermIds == null)
-					mappedTermIds = new HashSet<Integer>();
+				if (mappedTermUuids == null)
+					mappedTermUuids = new HashSet<String>();
 				
 				//if we already have a mapping to this term, reject it this map
-				if (!mappedTermIds.add(map.getTermB().getId())) {
+				if (!mappedTermUuids.add(map.getTermB().getUuid())) {
 					errors.rejectValue("conceptReferenceTermMaps[" + index + "].termB",
 					    "ConceptReferenceTerm.termToTerm.alreadyMapped",
 					    "Cannot map a reference term multiple times to the same concept reference term");

@@ -107,4 +107,31 @@ public class WebConstants {
 	public static final String AJAX_DASHBOARD_ADD_ENCOUNTER_TO_VISIT_LINKS = "ajax_dashboard_encounter_to_visit_links_";
 	
 	public static final String AJAX_DASHBOARD_LAST_VIEWED_TAB = "ajax_dashboard_last_viewed_tab";
+
+	/**
+	 * Session attribute name that specifies if there are any privilege checks the currently
+	 * authenticated user failed
+	 */
+	public static final String INSUFFICIENT_PRIVILEGES = "insufficient_privileges";
+	
+	/**
+	 * Session attribute name for the url of the page the user was trying to access when they failed
+	 * a privilege check
+	 */
+	public static final String DENIED_PAGE = "denied_page";
+	
+	/**
+	 * Session attribute name for the privileges the user didn't have
+	 */
+	public static final String REQUIRED_PRIVILEGES = "required_privileges";
+	
+	/**
+	 * Session attribute name for the uncaught exception message
+	 */
+	public static final String UNCAUGHT_EXCEPTION_MESSAGE = "uncaught_exception_message";
+	
+	/**
+	 * Session attribute name for the referer url
+	 */
+	public static final String REFERER_URL = "referer_url";
 }

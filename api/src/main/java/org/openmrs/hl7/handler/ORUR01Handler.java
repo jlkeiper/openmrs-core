@@ -47,6 +47,7 @@ import org.openmrs.api.context.Context;
 import org.openmrs.hl7.HL7Constants;
 import org.openmrs.hl7.HL7InQueueProcessor;
 import org.openmrs.hl7.HL7Service;
+import org.openmrs.obs.ComplexData;
 import org.openmrs.util.OpenmrsConstants;
 import org.openmrs.util.OpenmrsUtil;
 import org.springframework.util.StringUtils;
@@ -64,6 +65,7 @@ import ca.uhn.hl7v2.model.v25.datatype.CX;
 import ca.uhn.hl7v2.model.v25.datatype.DLD;
 import ca.uhn.hl7v2.model.v25.datatype.DT;
 import ca.uhn.hl7v2.model.v25.datatype.DTM;
+import ca.uhn.hl7v2.model.v25.datatype.ED;
 import ca.uhn.hl7v2.model.v25.datatype.EI;
 import ca.uhn.hl7v2.model.v25.datatype.FT;
 import ca.uhn.hl7v2.model.v25.datatype.ID;
@@ -139,7 +141,8 @@ public class ORUR01Handler implements Application {
 	 * @should fail if the provider name type code is not specified and is not a personId
 	 * @should understand form uuid if present
 	 * @should prefer form uuid over id if both are present
-	 * @should prefer form id if uuid is not found	 
+	 * @should prefer form id if uuid is not found
+	 * @should set complex data for obs with complex concepts
 	 */
 	public Message processMessage(Message message) throws ApplicationException {
 		
@@ -252,6 +255,12 @@ public class ORUR01Handler implements Application {
 			
 			// the parent obr
 			OBR obr = orderObs.getOBR();
+			
+			if (!StringUtils.hasText(obr.getUniversalServiceIdentifier().getIdentifier().getValue())) {
+				throw new HL7Exception(
+				        "Check to ensure that the form's OBS section is a concept field. Invalid OBR in hl7 message with uid: "
+				                + messageControlId);
+			}
 			
 			// if we're not ignoring this obs group, create an
 			// Obs grouper object that the underlying obs objects will use
@@ -771,6 +780,22 @@ public class ORUR01Handler implements Application {
 				return null;
 			}
 			obs.setValueText(value.getValue());
+		} else if ("ED".equals(hl7Datatype)) {
+			ED value = (ED) obx5;
+			if (value == null || value.getData() == null || !StringUtils.hasText(value.getData().getValue())) {
+				log.warn("Not creating null valued obs for concept " + concept);
+				return null;
+			}
+			//we need to hydrate the concept so that the EncounterSaveHandler
+			//doesn't fail since it needs to check if it is a concept numeric
+			Concept c = Context.getConceptService().getConcept(obs.getConcept().getConceptId());
+			obs.setConcept(c);
+			String title = null;
+			if (obs.getValueCodedName() != null)
+				title = obs.getValueCodedName().getName();
+			if (!StringUtils.hasText(title))
+				title = c.getName().getName();
+			obs.setComplexData(new ComplexData(title, value.getData().getValue()));
 		} else {
 			// unsupported data type
 			// TODO: support RP (report), SN (structured numeric)
@@ -1062,19 +1087,16 @@ public class ORUR01Handler implements Application {
 		Integer locationId = Context.getHL7Service().resolveLocationId(hl7Location);
 		if (locationId == null)
 			throw new HL7Exception("Could not resolve location");
-		Location location = new Location();
-		location.setLocationId(locationId);
-		return location;
+		
+		return Context.getLocationService().getLocation(locationId);
 	}
 	
 	/**
-	 * needs to find a Form based on information in MSH-21.
-	 * 
-	 * example: 16^AMRS.ELD.FORMID
+	 * needs to find a Form based on information in MSH-21. example: 16^AMRS.ELD.FORMID
 	 * 
 	 * @param msh
 	 * @return
-	 * @throws HL7Exception 
+	 * @throws HL7Exception
 	 */
 	private Form getForm(MSH msh) throws HL7Exception {
 		String uuid = null;

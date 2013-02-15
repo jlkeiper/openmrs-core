@@ -46,7 +46,7 @@ public class Person extends BaseOpenmrsData implements java.io.Serializable {
 	
 	public static final long serialVersionUID = 2L;
 	
-	private static final Log log = LogFactory.getLog(Person.class);
+	protected final Log log = LogFactory.getLog(getClass());
 	
 	protected Integer personId;
 	
@@ -61,6 +61,8 @@ public class Person extends BaseOpenmrsData implements java.io.Serializable {
 	private Date birthdate;
 	
 	private Boolean birthdateEstimated = false;
+	
+	private Boolean deathdateEstimated = false;
 	
 	private Boolean dead = false;
 	
@@ -121,6 +123,7 @@ public class Person extends BaseOpenmrsData implements java.io.Serializable {
 		gender = person.getGender();
 		birthdate = person.getBirthdate();
 		birthdateEstimated = person.getBirthdateEstimated();
+		deathdateEstimated = person.getDeathdateEstimated();
 		dead = person.isDead();
 		deathDate = person.getDeathDate();
 		causeOfDeath = person.getCauseOfDeath();
@@ -220,6 +223,17 @@ public class Person extends BaseOpenmrsData implements java.io.Serializable {
 	@Attribute(required = true)
 	public void setBirthdateEstimated(Boolean birthdateEstimated) {
 		this.birthdateEstimated = birthdateEstimated;
+	}
+	
+	public Boolean getDeathdateEstimated() {
+		return this.deathdateEstimated;
+	}
+	
+	/**
+	 * @param deathdateEstimated true if person's deathdate is estimated
+	 */
+	public void setDeathdateEstimated(Boolean deathdateEstimated) {
+		this.deathdateEstimated = deathdateEstimated;
 	}
 	
 	/**
@@ -611,13 +625,14 @@ public class Person extends BaseOpenmrsData implements java.io.Serializable {
 	 * address doesn't exist already.
 	 * 
 	 * @param address
+	 * @should not add a person address with blank fields
 	 */
 	public void addAddress(PersonAddress address) {
 		if (address != null) {
 			address.setPerson(this);
 			if (addresses == null)
 				addresses = new TreeSet<PersonAddress>();
-			if (!OpenmrsUtil.collectionContains(addresses, address))
+			if (!OpenmrsUtil.collectionContains(addresses, address) && !address.isBlank())
 				addresses.add(address);
 		}
 	}
@@ -811,6 +826,7 @@ public class Person extends BaseOpenmrsData implements java.io.Serializable {
 		c.add(Calendar.YEAR, -1 * age);
 		setBirthdate(c.getTime());
 		setBirthdateEstimated(true);
+		
 	}
 	
 	public User getPersonChangedBy() {

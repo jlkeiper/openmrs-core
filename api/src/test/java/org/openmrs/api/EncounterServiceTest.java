@@ -45,7 +45,9 @@ import org.openmrs.Location;
 import org.openmrs.Obs;
 import org.openmrs.Order;
 import org.openmrs.Patient;
+import org.openmrs.Privilege;
 import org.openmrs.Provider;
+import org.openmrs.Role;
 import org.openmrs.User;
 import org.openmrs.Visit;
 import org.openmrs.VisitType;
@@ -57,6 +59,7 @@ import org.openmrs.api.handler.NoVisitAssignmentHandler;
 import org.openmrs.test.BaseContextSensitiveTest;
 import org.openmrs.test.Verifies;
 import org.openmrs.util.OpenmrsConstants;
+import org.openmrs.util.PrivilegeConstants;
 
 /**
  * Tests all methods in the {@link EncounterService}
@@ -155,17 +158,31 @@ public class EncounterServiceTest extends BaseContextSensitiveTest {
 		
 		// First, create a new Encounter
 		Encounter enc = buildEncounter();
-		es.saveEncounter(enc);
 		
-		// Now add an obs to it
-		Obs newObs = new Obs();
-		newObs.setConcept(new Concept(1));
-		newObs.setValueNumeric(50d);
+		//add an obs to the encounter
+		Obs groupObs = new Obs();
+		groupObs.setConcept(new Concept(1));
+		groupObs.setValueNumeric(50d);
 		
-		enc.addObs(newObs);
-		es.saveEncounter(enc);
+		// add an obs to the group
+		Obs childObs = new Obs();
+		childObs.setConcept(new Concept(1));
+		childObs.setValueNumeric(50d);
+		groupObs.addGroupMember(childObs);
+		enc.addObs(groupObs);
 		
-		assertNotNull(newObs.getObsId());
+		//confirm that save and new enc id are cascaded to obs groupMembers
+		//even though childObs aren't directly associated to enc
+		assertNotNull("save succeeds without error", es.saveEncounter(enc));
+		assertTrue("enc save succeeds", enc.getId() > 0);
+		
+		assertNotNull("obs save succeeds", groupObs.getObsId());
+		assertEquals("encounter id propogated", groupObs.getEncounter().getId(), enc.getId());
+		assertEquals("encounter time propogated", groupObs.getObsDatetime(), enc.getEncounterDatetime());
+		assertNotNull("obs save succeeds", childObs.getObsId());
+		assertEquals("encounter id propogated", childObs.getEncounter().getId(), enc.getId());
+		assertEquals("encounter time propogated", childObs.getObsDatetime(), enc.getEncounterDatetime());
+		
 	}
 	
 	/**
@@ -476,6 +493,7 @@ public class EncounterServiceTest extends BaseContextSensitiveTest {
 		Order order = new Order();
 		order.setConcept(new Concept(1));
 		order.setPatient(new Patient(2));
+		order.setStartDate(new Date());
 		order.setDateCreated(date);
 		order.setCreator(creator);
 		encounter.addOrder(order);
@@ -1929,5 +1947,567 @@ public class EncounterServiceTest extends BaseContextSensitiveTest {
 		
 		encounter = encounterService.getEncounter(encounter.getEncounterId());
 		assertEquals(1, encounter.getProvidersByRoles().size());
+	}
+	
+	/**
+	 * @see {@link EncounterService#filterEncountersByViewPermissions(List, User)}
+	 */
+	@Test
+	@Verifies(value = "should filter encounters if user is not allowed to see some encounters", method = "filterEncountersByViewPermissions(List, User)")
+	public void filterEncountersByViewPermissions_shouldFilterEncountersIfUserIsNotAllowedToSeeSomeEncounters()
+	        throws Exception {
+		EncounterService encounterService = Context.getEncounterService();
+		
+		int expectedSize = encounterService.getEncountersByPatientId(3).size();
+		
+		Encounter encounter = new Encounter();
+		encounter.setLocation(new Location(1));
+		encounter.setEncounterDatetime(new Date());
+		encounter.setPatient(Context.getPatientService().getPatient(3));
+		EncounterType encounterType = new EncounterType(1);
+		encounterType.setViewPrivilege(Context.getUserService().getPrivilege("Some Privilege For View Encounter Types"));
+		encounter.setEncounterType(encounterType);
+		
+		EncounterRole role = new EncounterRole();
+		role.setName("role");
+		role = encounterService.saveEncounterRole(role);
+		
+		Provider provider = new Provider();
+		provider.setName("provider");
+		provider.setIdentifier("id1");
+		provider = Context.getProviderService().saveProvider(provider);
+		
+		encounter.addProvider(role, provider);
+		encounterService.saveEncounter(encounter);
+		
+		List<Encounter> patientEncounters = encounterService.getEncountersByPatientId(3);
+		assertEquals(expectedSize + 1, patientEncounters.size());
+		
+		if (Context.isAuthenticated()) {
+			Context.logout();
+		}
+		Context.authenticate("test_user", "test");
+		Context.addProxyPrivilege(PrivilegeConstants.GET_ENCOUNTERS);
+		
+		patientEncounters = encounterService.getEncountersByPatientId(3);
+		int actualSize = patientEncounters.size();
+		
+		Context.removeProxyPrivilege(PrivilegeConstants.GET_ENCOUNTERS);
+		Context.logout();
+		
+		assertEquals(actualSize, expectedSize);
+		assertTrue(!patientEncounters.contains(encounter));
+	}
+	
+	/**
+	 * @see {@link EncounterService#filterEncountersByViewPermissions(List, User)}
+	 */
+	@Test
+	@Verifies(value = "should not filter all encounters when the encounter type's view privilege column is null", method = "filterEncountersByViewPermissions(List, User)")
+	public void filterEncountersByViewPermissions_shouldNotFilterAllEncountersWhenTheEncounterTypesViewPrivilegeColumnIsNull()
+	        throws Exception {
+		EncounterService encounterService = Context.getEncounterService();
+		
+		int beforeSize = encounterService.getEncountersByPatientId(3).size();
+		
+		Encounter encounter = new Encounter();
+		encounter.setLocation(new Location(1));
+		encounter.setEncounterDatetime(new Date());
+		encounter.setPatient(Context.getPatientService().getPatient(3));
+		EncounterType encounterType = new EncounterType(1);
+		// viewPrivilige on encounter type intentionally left null
+		encounter.setEncounterType(encounterType);
+		
+		EncounterRole role = new EncounterRole();
+		role.setName("role");
+		role = encounterService.saveEncounterRole(role);
+		
+		Provider provider = new Provider();
+		provider.setName("provider");
+		provider.setIdentifier("id1");
+		provider = Context.getProviderService().saveProvider(provider);
+		
+		encounter.addProvider(role, provider);
+		encounterService.saveEncounter(encounter);
+		
+		List<Encounter> patientEncounters = encounterService.getEncountersByPatientId(3);
+		assertNotNull(patientEncounters);
+		assertEquals(beforeSize + 1, patientEncounters.size());
+	}
+	
+	/**
+	 * @see {@link EncounterService#canViewAllEncounterTypes(User)}
+	 */
+	@Test
+	@Verifies(value = "should return true if user is granted to view all encounters", method = "canViewAllEncounterTypes(User)")
+	public void canViewAllEncounterTypes_shouldReturnTrueIfUserIsGrantedToViewEncounters() throws Exception {
+		EncounterService encounterService = Context.getEncounterService();
+		
+		EncounterType encounterType = new EncounterType("testing", "desc");
+		Privilege viewPrivilege = Context.getUserService().getPrivilege("Some Privilege For View Encounter Types");
+		encounterType.setViewPrivilege(viewPrivilege);
+		
+		encounterService.saveEncounterType(encounterType);
+		
+		User user = Context.getUserService().getUserByUsername("test_user");
+		assertNotNull(user);
+		
+		assertFalse(encounterService.canViewAllEncounterTypes(user));
+		
+		Role role = Context.getUserService().getRole("Provider");
+		role.addPrivilege(viewPrivilege);
+		user.addRole(role);
+		
+		assertTrue(encounterService.canViewAllEncounterTypes(user));
+	}
+	
+	/**
+	 * @see {@link EncounterService#canViewAllEncounterTypes(User)}
+	 */
+	@Test
+	@Verifies(value = "should return true when the encounter type's view privilege column is null", method = "canViewAllEncounterTypes(User)")
+	public void canViewAllEncounterTypes_shouldReturnTrueWhenTheEncounterTypesViewPrivilegeColumnIsNull() throws Exception {
+		EncounterService encounterService = Context.getEncounterService();
+		
+		// set viewPrivilege on each encounter type to null
+		for (EncounterType encounterType : encounterService.getAllEncounterTypes()) {
+			encounterType.setViewPrivilege(null);
+			encounterService.saveEncounterType(encounterType);
+		}
+		
+		User user = Context.getUserService().getUserByUsername("test_user");
+		assertNotNull(user);
+		
+		assertTrue(encounterService.canViewAllEncounterTypes(user));
+	}
+	
+	/**
+	 * @see {@link EncounterService#canEditAllEncounterTypes(User)}
+	 */
+	@Test
+	@Verifies(value = "should return true if user is granted to edit all encounters", method = "canEditAllEncounterTypes(User)")
+	public void canEditAllEncounterTypes_shouldReturnTrueIfUserIsGrantedToEditEncounters() throws Exception {
+		EncounterService encounterService = Context.getEncounterService();
+		
+		EncounterType encounterType = new EncounterType("testing", "desc");
+		Privilege editPrivilege = Context.getUserService().getPrivilege("Some Privilege For Edit Encounter Types");
+		encounterType.setEditPrivilege(editPrivilege);
+		
+		encounterService.saveEncounterType(encounterType);
+		
+		User user = Context.getUserService().getUserByUsername("test_user");
+		assertNotNull(user);
+		
+		assertFalse(encounterService.canEditAllEncounterTypes(user));
+		
+		Role role = Context.getUserService().getRole("Provider");
+		role.addPrivilege(editPrivilege);
+		user.addRole(role);
+		
+		assertTrue(encounterService.canEditAllEncounterTypes(user));
+	}
+	
+	/**
+	 * @see {@link EncounterService#canEditAllEncounterTypes(User)}
+	 */
+	@Test
+	@Verifies(value = "should return true when the encounter type's edit privilege column is null", method = "canViewAllEncounterTypes(User)")
+	public void canViewAllEncounterTypes_shouldReturnTrueWhenTheEncounterTypesEditPrivilegeColumnIsNull() throws Exception {
+		EncounterService encounterService = Context.getEncounterService();
+		
+		// set editPrivilege on each encounter type to null
+		for (EncounterType encounterType : encounterService.getAllEncounterTypes()) {
+			encounterType.setEditPrivilege(null);
+			encounterService.saveEncounterType(encounterType);
+		}
+		
+		User user = Context.getUserService().getUserByUsername("test_user");
+		assertNotNull(user);
+		
+		assertTrue(encounterService.canEditAllEncounterTypes(user));
+	}
+	
+	/**
+	 * @see {@link EncounterService#canEditEncounter(Encounter, User)}
+	 */
+	@Test
+	@Verifies(value = "should return true if user can edit encounter", method = "canEditEncounter(Encounter, User)")
+	public void canEditEncounter_shouldReturnTrueIfUserCanEditEncounter() throws Exception {
+		// get encounter that has type with edit privilege set
+		Encounter encounter = getEncounterWithEditPrivilege();
+		
+		User user = Context.getUserService().getUserByUsername("test_user");
+		assertNotNull(user);
+		
+		// add required privilege to role in which this user is
+		Role role = Context.getUserService().getRole("Provider");
+		role.addPrivilege(encounter.getEncounterType().getEditPrivilege());
+		user.addRole(role);
+		
+		assertTrue(Context.getEncounterService().canEditEncounter(encounter, user));
+	}
+	
+	/**
+	 * @see {@link EncounterService#canEditEncounter(Encounter, User)}
+	 */
+	@Test
+	@Verifies(value = "should return false if user can not edit encounter", method = "canEditEncounter(Encounter, User)")
+	public void canEditEncounter_shouldReturnFalseIfUserCanNotEditEncounter() throws Exception {
+		// get encounter that has type with edit privilege set
+		Encounter encounter = getEncounterWithEditPrivilege();
+		
+		User user = Context.getUserService().getUserByUsername("test_user");
+		assertNotNull(user);
+		
+		// left user as is - i.e. without required privilege
+		
+		assertFalse(Context.getEncounterService().canEditEncounter(encounter, user));
+	}
+	
+	/**
+	 * @see {@link EncounterService#canEditEncounter(Encounter, User)}
+	 */
+	@Test(expected = IllegalArgumentException.class)
+	@Verifies(value = "should fail if encounter is null", method = "canEditEncounter(Encounter, User)")
+	public void canEditEncounter_shouldFailfIfEncounterIsNull() throws Exception {
+		// invoke method using null encounter
+		Context.getEncounterService().canEditEncounter(null, null);
+	}
+	
+	/**
+	 * @see {@link EncounterService#canViewEncounter(Encounter, User)}
+	 */
+	@Test
+	@Verifies(value = "should return true if user can view encounter", method = "canViewEncounter(Encounter, User)")
+	public void canViewEncounter_shouldReturnTrueIfUserCanViewEncounter() throws Exception {
+		// get encounter that has type with view privilege set
+		Encounter encounter = getEncounterWithViewPrivilege();
+		
+		User user = Context.getUserService().getUserByUsername("test_user");
+		assertNotNull(user);
+		
+		// add required privilege to role in which this user is
+		Role role = Context.getUserService().getRole("Provider");
+		role.addPrivilege(encounter.getEncounterType().getViewPrivilege());
+		user.addRole(role);
+		
+		assertTrue(Context.getEncounterService().canViewEncounter(encounter, user));
+	}
+	
+	/**
+	 * @see {@link EncounterService#canViewEncounter(Encounter, User)}
+	 */
+	@Test(expected = IllegalArgumentException.class)
+	@Verifies(value = "should fail if encounter is null", method = "canViewEncounter(Encounter, User)")
+	public void canViewEncounter_shouldFailfIfEncounterIsNull() throws Exception {
+		// invoke method using null encounter
+		Context.getEncounterService().canViewEncounter(null, null);
+	}
+	
+	/**
+	 * @see {@link EncounterService#canViewEncounter(Encounter, User)}
+	 */
+	@Test
+	@Verifies(value = "should return false if user can not view encounter", method = "canViewEncounter(Encounter, User)")
+	public void canViewEncounter_shouldReturnFalseIfUserCanNotViewEncounter() throws Exception {
+		// get encounter that has type with view privilege set
+		Encounter encounter = getEncounterWithViewPrivilege();
+		
+		User user = Context.getUserService().getUserByUsername("test_user");
+		assertNotNull(user);
+		
+		// left user as is - i.e. without required privilege
+		
+		assertFalse(Context.getEncounterService().canViewEncounter(encounter, user));
+	}
+	
+	/**
+	 * @see {@link EncounterService#getEncounter(Integer)}
+	 */
+	@Test(expected = APIException.class)
+	@Verifies(value = "should fail if user is not allowed to view encounter by given id", method = "getEncounter(Integer)")
+	public void getEncounter_shouldFailIfUserIsNotAllowedToViewEncounterByGivenId() throws Exception {
+		// get encounter that has type with view privilege set
+		Encounter encounter = getEncounterWithViewPrivilege();
+		
+		User user = Context.getUserService().getUserByUsername("test_user");
+		assertNotNull(user);
+		
+		// left this user as is - i.e. without required privilege
+		// and authenticate under it's account
+		Context.becomeUser(user.getSystemId());
+		
+		// have to add privilege in order to be able to call getEncounter(Integer) method
+		Context.addProxyPrivilege(PrivilegeConstants.VIEW_ENCOUNTERS);
+		
+		assertNull(Context.getEncounterService().getEncounter(encounter.getId()));
+	}
+	
+	/**
+	 * @see {@link EncounterService#getEncounter(Integer)}
+	 */
+	@Test
+	@Verifies(value = "should return encounter if user is allowed to view it", method = "getEncounter(Integer)")
+	public void getEncounter_shouldReturnEncounterIfUserIsAllowedToViewIt() throws Exception {
+		// get encounter that has type with view privilege set
+		Encounter encounter = getEncounterWithViewPrivilege();
+		
+		User user = Context.getUserService().getUserByUsername("test_user");
+		assertNotNull(user);
+		
+		// add required privilege to role in which this user is
+		Role role = Context.getUserService().getRole("Provider");
+		role.addPrivilege(encounter.getEncounterType().getViewPrivilege());
+		user.addRole(role);
+		
+		// and authenticate under it's account
+		Context.becomeUser(user.getSystemId());
+		
+		// have to add privilege in order to be able to call getEncounter(Integer) method
+		Context.addProxyPrivilege(PrivilegeConstants.VIEW_ENCOUNTERS);
+		
+		assertNotNull(Context.getEncounterService().getEncounter(encounter.getId()));
+	}
+	
+	/**
+	 * @see {@link EncounterService#saveEncounter(Encounter)}
+	 */
+	@Test(expected = APIException.class)
+	@Verifies(value = "should fail if user is not supposed to edit encounters of type of given encounter", method = "saveEncounter(Encounter)")
+	public void saveEncounter_shouldFailfIfUserIsNotSupposedToEditEncountersOfTypeOfGivenEncounter() throws Exception {
+		// get encounter that has type with edit privilege set
+		Encounter encounter = getEncounterWithEditPrivilege();
+		
+		User user = Context.getUserService().getUserByUsername("test_user");
+		assertNotNull(user);
+		
+		// left this user as is - i.e. without required privilege
+		// and authenticate under it's account
+		Context.becomeUser(user.getSystemId());
+		
+		// have to add privilege in order to be able to call saveEncounter(Encounter) method
+		Context.addProxyPrivilege(PrivilegeConstants.EDIT_ENCOUNTERS);
+		
+		Context.getEncounterService().saveEncounter(encounter);
+	}
+	
+	/**
+	 * @see {@link EncounterService#voidEncounter(Encounter, String)}
+	 */
+	@Test(expected = APIException.class)
+	@Verifies(value = "should fail if user is not supposed to edit encounters of type of given encounter", method = "voidEncounter(Encounter, String)")
+	public void voidEncounter_shouldFailfIfUserIsNotSupposedToEditEncountersOfTypeOfGivenEncounter() throws Exception {
+		// get encounter that has type with edit privilege set
+		Encounter encounter = getEncounterWithEditPrivilege();
+		
+		User user = Context.getUserService().getUserByUsername("test_user");
+		assertNotNull(user);
+		
+		// left this user as is - i.e. without required privilege
+		// and authenticate under it's account
+		Context.becomeUser(user.getSystemId());
+		
+		// have to add privilege in order to be able to call voidEncounter(Encounter,String) method
+		Context.addProxyPrivilege(PrivilegeConstants.EDIT_ENCOUNTERS);
+		
+		Context.getEncounterService().voidEncounter(encounter, "test");
+	}
+	
+	/**
+	 * @see {@link EncounterService#unvoidEncounter(Encounter)}
+	 */
+	@Test(expected = APIException.class)
+	@Verifies(value = "should fail if user is not supposed to edit encounters of type of given encounter", method = "voidEncounter(Encounter)")
+	public void unvoidEncounter_shouldFailfIfUserIsNotSupposedToEditEncountersOfTypeOfGivenEncounter() throws Exception {
+		// get encounter that has type with edit privilege set
+		Encounter encounter = getEncounterWithEditPrivilege();
+		
+		User user = Context.getUserService().getUserByUsername("test_user");
+		assertNotNull(user);
+		
+		// left this user as is - i.e. without required privilege
+		// and authenticate under it's account
+		Context.becomeUser(user.getSystemId());
+		
+		// have to add privilege in order to be able to call unvoidEncounter(Encounter) method
+		Context.addProxyPrivilege(PrivilegeConstants.EDIT_ENCOUNTERS);
+		
+		Context.getEncounterService().unvoidEncounter(encounter);
+	}
+	
+	/**
+	 * @see {@link EncounterService#purgeEncounter(Encounter)}
+	 */
+	@Test(expected = APIException.class)
+	@Verifies(value = "should fail if user is not supposed to edit encounters of type of given encounter", method = "purgeEncounter(Encounter)")
+	public void purgeEncounter_shouldFailfIfUserIsNotSupposedToEditEncountersOfTypeOfGivenEncounter() throws Exception {
+		// get encounter that has type with edit privilege set
+		Encounter encounter = getEncounterWithEditPrivilege();
+		
+		User user = Context.getUserService().getUserByUsername("test_user");
+		assertNotNull(user);
+		
+		// left this user as is - i.e. without required privilege
+		// and authenticate under it's account
+		Context.becomeUser(user.getSystemId());
+		
+		// have to add privilege in order to be able to call purgeEncounter(Encounter) method
+		Context.addProxyPrivilege(PrivilegeConstants.PURGE_ENCOUNTERS);
+		
+		Context.getEncounterService().purgeEncounter(encounter);
+	}
+	
+	/**
+	 * @see {@link EncounterService#purgeEncounter(Encounter,Boolean)}
+	 */
+	@Test(expected = APIException.class)
+	@Verifies(value = "should fail if user is not supposed to edit encounters of type of given encounter", method = "purgeEncounter(Encounter,Boolean)")
+	public void purgeEncounterCascade_shouldFailfIfUserIsNotSupposedToEditEncountersOfTypeOfGivenEncounter()
+	        throws Exception {
+		// get encounter that has type with edit privilege set
+		Encounter encounter = getEncounterWithEditPrivilege();
+		
+		User user = Context.getUserService().getUserByUsername("test_user");
+		assertNotNull(user);
+		
+		// left this user as is - i.e. without required privilege
+		// and authenticate under it's account
+		Context.becomeUser(user.getSystemId());
+		
+		// have to add privilege in order to be able to call purgeEncounter(Encounter,Boolean) method
+		Context.addProxyPrivilege(PrivilegeConstants.PURGE_ENCOUNTERS);
+		
+		Context.getEncounterService().purgeEncounter(encounter, Boolean.TRUE);
+	}
+	
+	/**
+	 * Gets encounter and adds edit privilege to it
+	 * 
+	 * @return encounter with type having non null edit privilege
+	 */
+	private Encounter getEncounterWithEditPrivilege() {
+		// create service to be used for encounter manipulations
+		EncounterService encounterService = Context.getEncounterService();
+		
+		Encounter encounter = encounterService.getEncounter(1);
+		EncounterType encounterType = encounter.getEncounterType();
+		// make sure that encounter type is not null
+		assertNotNull(encounterType);
+		// set view privilege on this encounter type
+		Privilege editPrivilege = Context.getUserService().getPrivilege("Some Privilege For Edit Encounter Types");
+		encounterType.setEditPrivilege(editPrivilege);
+		encounter.setEncounterType(encounterType);
+		// update encounter
+		encounter = encounterService.saveEncounter(encounter);
+		// make sure that encounter type updated successfully
+		assertNotNull(encounter);
+		
+		return encounter;
+	}
+	
+	/**
+	 * Gets encounter and adds view privilege to it
+	 * 
+	 * @return encounter with type having non null view privilege
+	 */
+	private Encounter getEncounterWithViewPrivilege() {
+		// create service to be used for encounter manipulations
+		EncounterService encounterService = Context.getEncounterService();
+		
+		Encounter encounter = encounterService.getEncounter(1);
+		EncounterType encounterType = encounter.getEncounterType();
+		// make sure that encounter type is not null
+		assertNotNull(encounterType);
+		// set view privilege on this encounter type
+		Privilege viewPrivilege = Context.getUserService().getPrivilege("Some Privilege For View Encounter Types");
+		encounterType.setViewPrivilege(viewPrivilege);
+		encounter.setEncounterType(encounterType);
+		// update encounter
+		encounter = encounterService.saveEncounter(encounter);
+		// make sure that encounter was updated successfully
+		assertNotNull(encounter);
+		
+		return encounter;
+	}
+	
+	/**
+	 * @see {@link EncounterService#getEncounters(String,Integer,Integer,Integer,null)}
+	 * 
+	 */
+	@Test
+	@Verifies(value = "should fetch encounters by patient id", method = "getEncounters(String,Integer,Integer,Integer,null)")
+	public void getEncounters_shouldFetchEncountersByPatientId() throws Exception {
+		Assert.assertEquals(2, Context.getEncounterService().getEncounters(null, 3, null, null, false).size());
+		Assert.assertEquals(4, Context.getEncounterService().getEncounters(null, 3, null, null, true).size());
+	}
+	
+	/**
+	 * @see {@link EncounterService#getEncounters(String,Integer,Integer,Integer,null)}
+	 */
+	@Test
+	@Verifies(value = "should match on the location name", method = "getEncounters(String,Integer,Integer,Integer,null)")
+	public void getEncounters_shouldMatchOnTheLocationName() throws Exception {
+		Assert.assertEquals(2, Context.getEncounterService().getEncounters("Test Location", 3, null, null, false).size());
+		Assert.assertEquals(4, Context.getEncounterService().getEncounters("Test Location", 3, null, null, true).size());
+	}
+	
+	/**
+	 * @see {@link EncounterService#getEncounters(String,Integer,Integer,Integer,null)}
+	 */
+	@Test
+	@Verifies(value = "should match on the provider name", method = "getEncounters(String,Integer,Integer,Integer,null)")
+	public void getEncounters_shouldMatchOnTheProviderName() throws Exception {
+		Assert.assertEquals(1, Context.getEncounterService().getEncounters("phys", 3, null, null, false).size());
+	}
+	
+	/**
+	 * @see {@link EncounterService#getEncounters(String,Integer,Integer,Integer,null)}
+	 */
+	@Test
+	@Verifies(value = "should should match on provider identifier", method = "getEncounters(String,Integer,Integer,Integer,null)")
+	public void getEncounters_shouldShouldMatchOnProviderIdentifier() throws Exception {
+		Assert.assertEquals(1, Context.getEncounterService().getEncounters("2", 3, null, null, false).size());
+		Assert.assertEquals(2, Context.getEncounterService().getEncounters("2", 3, null, null, true).size());
+	}
+	
+	/**
+	 * @see {@link EncounterService#getEncounters(String,Integer,Integer,Integer,null)}
+	 */
+	@Test
+	@Verifies(value = "should match on the provider person name", method = "getEncounters(String,Integer,Integer,Integer,null)")
+	public void getEncounters_shouldMatchOnTheProviderPersonName() throws Exception {
+		//Should match on Super User and John3 Doe
+		Assert.assertEquals(1, Context.getEncounterService().getEncounters("er jo", 3, null, null, false).size());
+		Assert.assertEquals(2, Context.getEncounterService().getEncounters("er jo", 3, null, null, true).size());
+		Assert.assertEquals(0, Context.getEncounterService().getEncounters("none", 3, null, null, true).size());
+	}
+	
+	/**
+	 * @see {@link EncounterService#getEncounters(String,Integer,Integer,Integer,null)}
+	 */
+	@Test
+	@Verifies(value = "should include voided encounters if includeVoided is set to true", method = "getEncounters(String,Integer,Integer,Integer,null)")
+	public void getEncounters_shouldIncludeVoidedEncountersIfIncludeVoidedIsSetToTrue() throws Exception {
+		Assert.assertEquals(2, Context.getEncounterService().getEncounters("2", 3, null, null, true).size());
+	}
+	
+	/**
+	 * @see {@link EncounterService#getEncounters(String,Integer,Integer,Integer,null)}
+	 * 
+	 */
+	@Test
+	@Verifies(value = "should match on the encounter type name", method = "getEncounters(String,Integer,Integer,Integer,null)")
+	public void getEncounters_shouldMatchOnTheEncounterTypeName() throws Exception {
+		Assert.assertEquals(2, Context.getEncounterService().getEncounters("Type B", 3, null, null, false).size());
+	}
+	
+	/**
+	 * @see {@link EncounterService#getEncounters(String,Integer,Integer,Integer,null)}
+	 * 
+	 */
+	@Test
+	@Verifies(value = "should match on the form name", method = "getEncounters(String,Integer,Integer,Integer,null)")
+	public void getEncounters_shouldMatchOnTheFormName() throws Exception {
+		Assert.assertEquals(2, Context.getEncounterService().getEncounters("Basic", 3, null, null, false).size());
 	}
 }

@@ -5,7 +5,7 @@
 <%@ include file="localHeader.jsp"%>
 
 <h2>
-	<spring:message code="Settings.title" />
+	<openmrs:message code="Settings.title" />
 </h2>
 <table style="width: 98%;">
 	<tr style="vertical-align: top;">
@@ -41,9 +41,18 @@
 											value="${ item.globalProperty }" />
 									</c:when>
 									<c:otherwise>
-										<form:input
-											path="settings[${status.index}].globalProperty.propertyValue"
-											size="50" maxlength="4000" /></td>
+										<c:choose>
+											<c:when test="${fn:length(item.globalProperty.propertyValue) > 20}">
+												<form:textarea
+													path="settings[${status.index}].globalProperty.propertyValue"
+													cols="50"/></td>
+										    </c:when>
+										    <c:otherwise>
+												<form:input
+													path="settings[${status.index}].globalProperty.propertyValue"
+													size="50" maxlength="4000" /></td>
+										    </c:otherwise>
+										</c:choose>
 									</c:otherwise>
 								</c:choose>
 								<form:errors path="settings[${status.index}].globalProperty.propertyValue" cssClass="error"/>
@@ -52,9 +61,9 @@
 					<tr>
 						<td colspan="2"><p>
 								<input id="saveButton" type="submit"
-									value="<spring:message code="general.save"/>" />
+									value="<openmrs:message code="general.save"/>" />
 								<input id="cancelButton" type="button"
-									value="<spring:message code="general.cancel"/>"
+									value="<openmrs:message code="general.cancel"/>"
 									onclick="window.location=''" />
 							</p></td>
 					</tr>

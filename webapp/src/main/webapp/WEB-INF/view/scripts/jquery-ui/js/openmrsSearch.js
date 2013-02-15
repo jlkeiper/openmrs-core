@@ -17,7 +17,7 @@
  * <pre>
  *  $j(document).ready(function() {
  *		$j("#elementId").openmrsSearch({
- *			searchLabel:'<spring:message code="General.search"/>',
+ *			searchLabel:'<openmrs:message code="General.search"/>',
  *			showIncludeVoided: true,
  *			displayLength: 5,
  *			minLength: 3,
@@ -48,8 +48,8 @@
  *				{fieldName:"fiels5", header:"Header5"},
  *				{fieldName:"field6", header:"Header6"}
  *			],
- *			{searchLabel: '<spring:message code="General.search"/>',
- *              searchPlaceholder:'<spring:message code="general.search" javaScriptEscape="true"/>',
+ *			{searchLabel: '<openmrs:message code="General.search"/>',
+ *              searchPlaceholder:'<openmrs:message code="general.search" javaScriptEscape="true"/>',
  *              displayLength: 5,
  *				minLength: 3, 
  *				columnWidths: ["15%","15%","15%","15%","15%", "25%"],
@@ -320,9 +320,9 @@ function OpenmrsSearch(div, showIncludeVoided, searchHandler, selectionHandler, 
 		    
 		    //catch control keys to stop the cursor in the input box from moving.
 		    input.keydown(function(event) {
-		    	//UP(38), DOWN(40), HOME(36), END(35), PAGE UP(33), PAGE DOWN(34)
+		    	//UP(38), DOWN(40), PAGE UP(33), PAGE DOWN(34)
 		    	var kc = event.keyCode;
-		    	if(((kc >= 33) && (kc <= 36)) || (kc == 38) || (kc == 40)) {
+		    	if(kc == 33 || kc == 34 || kc == 38 || kc == 40) {
 		    		if(!(self._div.find(".openmrsSearchDiv").css("display") != 'none')) {
 						return true;
 					}
@@ -334,12 +334,6 @@ function OpenmrsSearch(div, showIncludeVoided, searchHandler, selectionHandler, 
 			    		case 34:
 			    			self._doPageDown();
 			    			break;
-				    	case 35:
-				    		self._doKeyEnd();
-				    		break;
-				    	case 36:
-				    		self._doKeyHome();
-				    		break;
 				    	case 38:
 				    		self._doKeyUp();
 				    		break;
@@ -423,7 +417,7 @@ function OpenmrsSearch(div, showIncludeVoided, searchHandler, selectionHandler, 
 		    		"sLengthMenu": omsgs.showNumberofEntries
 		    	},
 		    	
-		    	/* Called to toggle the verobse output */
+		    	/* Called to toggle the verbose output */
 		    	fnDrawCallback : function(oSettings){
 		    		//we have nothing to hide
 		    		if(!self.options.showIncludeVerbose || !self._table || self._table.fnGetNodes().length == 0)
@@ -521,7 +515,7 @@ function OpenmrsSearch(div, showIncludeVoided, searchHandler, selectionHandler, 
 		    		if(self.options.selectionHandler) {
 		    			$j(nRow).unbind('click').bind('click', function() {
 		    				//Register onclick handlers to each row
-		    				self._doSelected(iDisplayIndexFull, self._results[iDisplayIndexFull]);
+		    				self._doSelected(iDisplayIndexFull, currItem);
 		    			});
 		    		}
 		    		
@@ -902,22 +896,6 @@ function OpenmrsSearch(div, showIncludeVoided, searchHandler, selectionHandler, 
 			
 			if(selectedRowIndex != null)
 				this._doSelected(selectedRowIndex, this._results[selectedRowIndex]);
-		},
-		
-		_doKeyHome: function() {
-			this._table.fnPageChange('first');
-			if(this._isHighlightedRowOnVisiblePage())
-				return;
-			
-			this._highlightRowOnPageFlip();
-		},
-		
-		_doKeyEnd: function() {
-			this._table.fnPageChange('last');
-			if(this._isHighlightedRowOnVisiblePage())
-				return;
-			
-			this._highlightRowOnPageFlip();
 		},
 		
 		_doSelected: function(position, rowData) {

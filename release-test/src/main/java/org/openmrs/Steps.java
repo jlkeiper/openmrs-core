@@ -15,6 +15,7 @@ package org.openmrs;
 
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
+import org.jbehave.core.annotations.Given;
 import org.jbehave.core.annotations.When;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
@@ -23,10 +24,7 @@ import org.openqa.selenium.lift.TestContext;
 import org.openqa.selenium.lift.find.*;
 import org.openqa.selenium.support.ui.Select;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.Random;
+import java.util.*;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.openqa.selenium.lift.Finders.button;
@@ -38,7 +36,8 @@ import static org.openqa.selenium.lift.match.SelectionMatcher.selection;
 
 public abstract class Steps {
 
-	private static final long DEFAULT_TIMEOUT = 5000;
+	private static final long DEFAULT_TIMEOUT = 8000;
+	private static final long EXTENDED_TIMEOUT = 25000;
 
 	protected WebDriver driver;
 
@@ -58,7 +57,7 @@ public abstract class Steps {
 	}
 
 	protected void waitAndClickOn(Finder finder) {
-		waitFor(finder);
+		waitFor(finder, DEFAULT_TIMEOUT);
 		clickOn(finder);
 	}
 
@@ -162,6 +161,21 @@ public abstract class Steps {
 		return new InputFinder().with(attribute("type", equalTo("checkbox")));
 	}
 
+    protected void selectFrom(String value, String id){
+        WebElement select = driver.findElement(By.id(id));
+        List<WebElement> options = select.findElements(By.tagName("option"));
+        for (WebElement option : options) {
+            if (value.equalsIgnoreCase(option.getText())){
+                option.click();
+            }
+        }
+    }
+
+    protected void waitAndAssertFor(Finder finder){
+        waitFor(finder, EXTENDED_TIMEOUT);
+        assertPresenceOf(finder);
+    }
+
 	/**
 	 * Randomizes a give value
 	 *
@@ -204,17 +218,18 @@ public abstract class Steps {
 
     @When("I click on the $linkName link")
 	public void clickLinkWithName(String linkName) {
-		clickOn(link().with(text(equalTo(linkName))));
+        waitAndClickOn(link().with(text(equalTo(linkName))));
 	}
 
     @When("I choose to $domain")
 	public void addEncounter(String domain) {
-		clickOn(link().with(text(equalTo(domain))));
+		waitAndClickOn(link().with(text(equalTo(domain))));
 	}
 
     @When("I click on the button $buttonName")
+    @Given("I click on the button $buttonName")
 	public void save(String buttonName) {
-		clickOn(button(buttonName));
+		waitAndClickOn(button(buttonName));
 	}
 
 }

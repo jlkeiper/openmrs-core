@@ -1,6 +1,7 @@
+Scenario: Change a global property
+
 GivenStories: org/openmrs/stories/go_to_admin_page.story
 
-Given I am on Admin page
 When I click on the Advanced Settings link
 Then take me to Advanced Settings Page with Advanced Settings as heading
 

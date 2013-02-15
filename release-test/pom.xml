@@ -16,34 +16,27 @@
 		<dependency>
 			<groupId>org.jbehave.web</groupId>
 			<artifactId>jbehave-web-selenium</artifactId>
-			<version>3.4.1</version>
-			<scope>compile</scope>
 		</dependency>
 		<dependency>
 			<groupId>mysql</groupId>
 			<artifactId>mysql-connector-java</artifactId>
-			<version>5.1.8</version>
 			<scope>runtime</scope>
 		</dependency>
         <dependency>
             <groupId>com.googlecode.lambdaj</groupId>
             <artifactId>lambdaj</artifactId>
-            <version>2.2</version>
         </dependency>
         <dependency>
             <groupId>org.openmrs.api</groupId>
             <artifactId>openmrs-api</artifactId>
-            <version>1.10.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.openmrs.web</groupId>
             <artifactId>openmrs-web</artifactId>
-            <version>1.10.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-mxj</artifactId>
-            <version>5.0.11</version>
         </dependency>
     </dependencies>
 
@@ -78,7 +71,8 @@
     </build>
 	<profiles>
 		<profile>
-            <!-- This profile will be useful when you want to run the test on your development server instead of release test server -->
+            <!-- This profile will be useful when you want to run the test on your development server instead of release test server.
+             Beware that this might change your development database.-->
 			<id>smoke-test-without-server</id>
 			<activation>
 				<activeByDefault>false</activeByDefault>
@@ -88,7 +82,7 @@
 					<plugin>
 						<groupId>org.jbehave</groupId>
 						<artifactId>jbehave-maven-plugin</artifactId>
-						<version>3.4.3</version>
+						<version>3.6.7</version>
 						<executions>
 							<execution>
 								<id>run-stories</id>
@@ -170,6 +164,16 @@
                                     </systemProperties>
                                 </configuration>
                             </execution>
+                            <execution>
+                                <id>jbehave-to-junit</id>
+                                <phase>post-integration-test</phase>
+                                <goals>
+                                    <goal>java</goal>
+                                </goals>
+                                <configuration>
+                                    <mainClass>org.openmrs.ReportsTransformer</mainClass>
+                                </configuration>
+                            </execution>
                         </executions>
                     </plugin>
 					<plugin>
@@ -185,7 +189,7 @@
 					<plugin>
 						<groupId>org.jbehave</groupId>
 						<artifactId>jbehave-maven-plugin</artifactId>
-						<version>3.4.3</version>
+						<version>3.6.7</version>
 						<executions>
 							<execution>
 								<id>run-stories</id>
@@ -193,7 +197,8 @@
 								<configuration>
                                     <ignoreFailureInStories>true</ignoreFailureInStories>
                                     <ignoreFailureInView>true</ignoreFailureInView>
-									<includes>
+                                    <storyTimeoutInSecs>${story.timeout.in.secs}</storyTimeoutInSecs>
+                                    <includes>
 										<include>**/stories/${test}.java</include>
 									</includes>
 								</configuration>
@@ -215,7 +220,7 @@
 					<plugin>
 						<groupId>org.mortbay.jetty</groupId>
 						<artifactId>maven-jetty-plugin</artifactId>
-						<version>6.1.10</version>
+						<version>6.1.26</version>
 
 						<configuration>
                             <webApp>${basedir}/target/${openMRSVersion}/webapp</webApp>
@@ -231,10 +236,15 @@
 								</systemProperty>
                                 <systemProperty>
                                     <name>jetty.port</name>
-                                    <value>8000</value>
+                                    <value>${jetty.port}</value>
                                 </systemProperty>
 							</systemProperties>
-
+                            <connectors>
+                                <connector implementation="org.mortbay.jetty.nio.SelectChannelConnector">
+                                    <port>${jetty.port}</port>
+                                    <soLingerTime>0</soLingerTime>
+                                </connector>
+                           </connectors>
 						</configuration>
 
 						<executions>
@@ -255,7 +265,7 @@
 									<goal>stop</goal>
 								</goals>
 								<configuration>
-									<stopPort>8080</stopPort>
+									<stopPort>${jetty.port}}</stopPort>
 									<stopKey>stop</stopKey>
 								</configuration>
 							</execution>
@@ -268,7 +278,9 @@
 		</profile>
 
         <profile>
-            <!-- run all the tests except for installation wizard test on the release test server an database-->
+            <!-- run all the tests except for installation wizard test on the release test server an database,
+            You need to have your database setup before you can run smoke test. So, first run the integration-test profile
+            and then you can run smoke tests any number of times.-->
 			<id>smoke-test</id>
 			<activation>
 				<activeByDefault>false</activeByDefault>
@@ -332,7 +344,7 @@
 					<plugin>
 						<groupId>org.mortbay.jetty</groupId>
 						<artifactId>maven-jetty-plugin</artifactId>
-						<version>6.1.10</version>
+						<version>6.1.26</version>
 
 						<configuration>
                             <webApp>${basedir}/target/${openMRSVersion}/webapp</webApp>
@@ -368,7 +380,7 @@
 									<goal>stop</goal>
 								</goals>
 								<configuration>
-									<stopPort>8080</stopPort>
+									<stopPort>${jetty.port}</stopPort>
 									<stopKey>stop</stopKey>
 								</configuration>
 							</execution>
@@ -378,7 +390,7 @@
 					<plugin>
 						<groupId>org.jbehave</groupId>
 						<artifactId>jbehave-maven-plugin</artifactId>
-						<version>3.4.3</version>
+						<version>3.6.7</version>
 						<executions>
 							<execution>
 								<id>run-stories</id>
@@ -475,7 +487,7 @@
                     <plugin>
                         <groupId>org.mortbay.jetty</groupId>
                         <artifactId>maven-jetty-plugin</artifactId>
-                        <version>6.1.10</version>
+                        <version>6.1.26</version>
 
                         <configuration>
                             <webApp>${basedir}/target/${openMRSVersion}/webapp</webApp>
@@ -499,8 +511,10 @@
 	</profiles>
 	<properties>
 		<webapp.name>openmrs</webapp.name>
-        <openMRSVersion>${parent.version}</openMRSVersion>
+        <openMRSVersion>${project.parent.version}</openMRSVersion>
+        <jetty.port>31337</jetty.port>
         <test>*</test>
+        <story.timeout.in.secs>1200</story.timeout.in.secs>
 	</properties>
 
 </project>

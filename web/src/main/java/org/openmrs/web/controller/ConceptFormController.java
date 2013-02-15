@@ -69,12 +69,14 @@ import org.openmrs.util.OpenmrsUtil;
 import org.openmrs.util.PrivilegeConstants;
 import org.openmrs.validator.ConceptValidator;
 import org.openmrs.web.WebConstants;
+import org.openmrs.web.controller.concept.ConceptReferenceTermWebValidator;
 import org.springframework.beans.propertyeditors.CustomDateEditor;
 import org.springframework.beans.propertyeditors.CustomNumberEditor;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.BindException;
+import org.springframework.validation.Errors;
 import org.springframework.web.bind.ServletRequestDataBinder;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.SimpleFormController;
@@ -88,7 +90,7 @@ import org.springframework.web.servlet.view.RedirectView;
  * @see org.openmrs.Concept
  */
 public class ConceptFormController extends SimpleFormController {
-	
+
 	/** Logger for this class and subclasses */
 	private static final Log log = LogFactory.getLog(ConceptFormController.class);
 	
@@ -252,6 +254,9 @@ public class ConceptFormController extends SimpleFormController {
 				
 				try {
 					new ConceptValidator().validate(concept, errors);
+					
+					validateConceptUsesPersistedObjects(concept, errors);
+					
 					if (!errors.hasErrors()) {
 						cs.saveConcept(concept);
 						httpSession.setAttribute(WebConstants.OPENMRS_MSG_ATTR, "Concept.saved");
@@ -280,6 +285,24 @@ public class ConceptFormController extends SimpleFormController {
 		}
 		
 		return new ModelAndView(new RedirectView(getFormView()));
+	}
+	
+	/**
+	 * @param concept
+	 * @param errors
+	 * @should add error if source is not saved
+	 * @should add error if map type is not saved
+	 * @should add error if term b is not saved
+	 */
+	void validateConceptUsesPersistedObjects(Concept concept, Errors errors) {
+		if (concept.getConceptMappings() != null) {
+			int index = 0;
+			for (ConceptMap conceptMap : concept.getConceptMappings()) {
+				errors.pushNestedPath("conceptMappings[" + index + "].conceptReferenceTerm");
+				new ConceptReferenceTermWebValidator().validate(conceptMap.getConceptReferenceTerm(), errors);
+				errors.popNestedPath();
+			}
+		}
 	}
 	
 	/**
@@ -478,9 +501,7 @@ public class ConceptFormController extends SimpleFormController {
 				}
 				
 				ConceptName shortNameInLocale = shortNamesByLocale.get(locale);
-				if (StringUtils.hasText(shortNameInLocale.getName())) {
-					concept.setShortName(shortNameInLocale);
-				}
+                concept.setShortName(shortNameInLocale);
 				
 				for (ConceptName synonym : synonymsByLocale.get(locale)) {
 					if (synonym != null && StringUtils.hasText(synonym.getName())) {
@@ -600,6 +621,18 @@ public class ConceptFormController extends SimpleFormController {
 			}
 			
 			return concept;
+		}
+		
+		/**
+		 * Builds a white-space separated list of concept ids belonging to a concept set
+		 * @return
+		 */
+		public String getSetElements() {
+			String result = "";
+			for (ConceptSet set : concept.getConceptSets()) {
+				result += set.getConcept().getConceptId() + " ";
+			}
+			return result;
 		}
 		
 		/**
@@ -850,8 +883,8 @@ public class ConceptFormController extends SimpleFormController {
 		}
 		
 		/**
-		 * Get the list of extensions/metadata and the specific instances of
-		 * them that use this concept.
+		 * Get the list of extensions/metadata and the specific instances of them that use this
+		 * concept.
 		 * 
 		 * @return list of {@link ConceptUsageExtension}
 		 */
@@ -862,9 +895,11 @@ public class ConceptFormController extends SimpleFormController {
 			// Forms
 			List<Link> forms = new ArrayList<Link>();
 			for (Form form : Context.getFormService().getFormsContainingConcept(concept)) {
-				forms.add(new Link(form.getName(), "/admin/forms/formSchemaDesign.form?formId=" + form.getFormId()));
+				Link link = new Link(form.getName(), "/admin/forms/formEdit.form?formId=" + form.getFormId());
+				link.setStrike(form.getRetired());
+				forms.add(link);
 			}
-			togo.add(new ConceptUsageExtension("dictionary.forms", forms, PrivilegeConstants.VIEW_FORMS));
+			togo.add(new ConceptUsageExtension("dictionary.forms", forms, PrivilegeConstants.GET_FORMS));
 			
 			// Drugs
 			List<Link> drugs = new ArrayList<Link>();

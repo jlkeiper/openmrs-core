@@ -587,7 +587,7 @@ table.patientTreatmentPrograms td {
 		font-size: 1.03em;
 	}
 
-.retired, .voided, .retired *, .voided * {
+.retired, .voided, .retired *, .voided *, a.retired {
 	text-decoration: line-through;
 }
 
@@ -1419,4 +1419,12 @@ td.dataTables_empty:hover{
 }
 #conceptSidebar fieldset {
 	padding: 10px;
+}
+.localeSpecific td {
+	background-color: whitesmoke;
+}
+a.selectedTab {
+	background-color: whitesmoke;
+	font-weight:bold;
+	text-decoration: none;
 }

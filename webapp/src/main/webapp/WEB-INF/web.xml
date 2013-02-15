@@ -102,15 +102,6 @@
 	</servlet-mapping>
 	
 	<servlet>
-		<servlet-name>auditServlet</servlet-name>
-		<servlet-class>org.openmrs.web.servlet.AuditServlet</servlet-class>
-	</servlet>
-	<servlet-mapping>
-		<servlet-name>auditServlet</servlet-name>
-		<url-pattern>/auditServlet</url-pattern>
-	</servlet-mapping>
-	
-	<servlet>
 		<servlet-name>quickReportServlet</servlet-name>
 		<servlet-class>org.openmrs.web.servlet.QuickReportServlet</servlet-class>
 	</servlet>
@@ -382,6 +373,11 @@
 		<!-- Don't use "load-on-startup" in case initial setup wizard is needed -->
 	</servlet>
 	
+	<servlet>
+		<servlet-name>jsp</servlet-name>
+		<servlet-class>org.apache.jasper.servlet.JspServlet</servlet-class>
+	</servlet>
+	
 	<!-- Gives access to servlets within modules -->
 	<servlet>
 		<servlet-name>module_servlet</servlet-name>
@@ -509,11 +505,6 @@
  		<servlet-name>openmrs</servlet-name>
  		<url-pattern>/uncaughtException</url-pattern>
 	</servlet-mapping>
-	
-	<error-page>
-		<exception-type>org.openmrs.api.APIAuthenticationException</exception-type>
-		<location>/login.htm</location>
-	</error-page>
 
 	<error-page>
 		<exception-type>org.springframework.web.HttpSessionRequiredException</exception-type>

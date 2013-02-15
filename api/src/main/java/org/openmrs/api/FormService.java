@@ -27,13 +27,11 @@ import org.openmrs.FormField;
 import org.openmrs.FormResource;
 import org.openmrs.annotation.Authorized;
 import org.openmrs.util.PrivilegeConstants;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
  * This service contains methods relating to Form, FormField, and Field. Methods relating to
  * FieldType are in AdministrationService
  */
-@Transactional
 public interface FormService extends OpenmrsService {
 	
 	/**
@@ -64,7 +62,6 @@ public interface FormService extends OpenmrsService {
 	 * @should return null if no form exists with given formId
 	 * @should return the requested form
 	 */
-	@Transactional(readOnly = true)
 	@Authorized(PrivilegeConstants.VIEW_FORMS)
 	public Form getForm(Integer formId) throws APIException;
 	
@@ -77,7 +74,6 @@ public interface FormService extends OpenmrsService {
 	 * @throws APIException
 	 * @should return null if no form has the exact form name
 	 */
-	@Transactional(readOnly = true)
 	@Authorized(PrivilegeConstants.VIEW_FORMS)
 	public Form getForm(String name) throws APIException;
 	
@@ -89,7 +85,6 @@ public interface FormService extends OpenmrsService {
 	 * @should find object given valid uuid
 	 * @should return null if no object found with given uuid
 	 */
-	@Transactional(readOnly = true)
 	public Form getFormByUuid(String uuid) throws APIException;
 	
 	/**
@@ -102,7 +97,6 @@ public interface FormService extends OpenmrsService {
 	 * @throws APIException
 	 * @should get the specific version of the form with the given name
 	 */
-	@Transactional(readOnly = true)
 	@Authorized(PrivilegeConstants.VIEW_FORMS)
 	public Form getForm(String name, String version) throws APIException;
 	
@@ -113,7 +107,6 @@ public interface FormService extends OpenmrsService {
 	 * @throws APIException
 	 * @should return all forms including retired
 	 */
-	@Transactional(readOnly = true)
 	@Authorized(PrivilegeConstants.VIEW_FORMS)
 	public List<Form> getAllForms() throws APIException;
 	
@@ -126,7 +119,6 @@ public interface FormService extends OpenmrsService {
 	 * @should return retired forms if includeRetired is true
 	 * @should not return retired forms if includeRetired is false
 	 */
-	@Transactional(readOnly = true)
 	@Authorized(PrivilegeConstants.VIEW_FORMS)
 	public List<Form> getAllForms(boolean includeRetired) throws APIException;
 	
@@ -141,7 +133,6 @@ public interface FormService extends OpenmrsService {
 	 * @should match forms with partial match on name
 	 * @should only return one form per name if onlyLatestVersion is true
 	 */
-	@Transactional(readOnly = true)
 	@Authorized(PrivilegeConstants.VIEW_FORMS)
 	public List<Form> getForms(String fuzzyName, boolean onlyLatestVersion);
 	
@@ -150,7 +141,6 @@ public interface FormService extends OpenmrsService {
 	 *             {@link #getForms(String, Boolean, Collection, Boolean, Collection, Collection, Collection)}
 	 */
 	@Deprecated
-	@Transactional(readOnly = true)
 	@Authorized(PrivilegeConstants.VIEW_FORMS)
 	public List<Form> getForms(String partialNameSearch, Boolean published, Collection<EncounterType> encounterTypes,
 	        Boolean retired, Collection<FormField> containingAnyFormField, Collection<FormField> containingAllFormFields);
@@ -176,9 +166,9 @@ public interface FormService extends OpenmrsService {
 	 * @should return unretired forms when retired equals false
 	 * @should return retired forms when retired equals true
 	 * @should return all forms including retired and unretired when retired is null
+	 * @should return forms containing all form fields in containingAllFormFields
 	 */
-	@Transactional(readOnly = true)
-	@Authorized(PrivilegeConstants.VIEW_FORMS)
+	@Authorized(PrivilegeConstants.GET_FORMS)
 	public List<Form> getForms(String partialNameSearch, Boolean published, Collection<EncounterType> encounterTypes,
 	        Boolean retired, Collection<FormField> containingAnyFormField, Collection<FormField> containingAllFormFields,
 	        Collection<Field> fields);
@@ -190,7 +180,6 @@ public interface FormService extends OpenmrsService {
 	 * 
 	 * @see #getForms(String, Boolean, Collection, Boolean, Collection, Collection, Collection)
 	 */
-	@Transactional(readOnly = true)
 	@Authorized(PrivilegeConstants.VIEW_FORMS)
 	public Integer getFormCount(String partialNameSearch, Boolean published, Collection<EncounterType> encounterTypes,
 	        Boolean retired, Collection<FormField> containingAnyFormField, Collection<FormField> containingAllFormFields,
@@ -203,7 +192,6 @@ public interface FormService extends OpenmrsService {
 	 * @throws APIException
 	 * @should only return published forms that are not retired
 	 */
-	@Transactional(readOnly = true)
 	@Authorized(PrivilegeConstants.VIEW_FORMS)
 	public List<Form> getPublishedForms() throws APIException;
 	
@@ -217,7 +205,6 @@ public interface FormService extends OpenmrsService {
 	 * @deprecated use {@link #getAllForms()} or {@link #getPublishedForms()}
 	 */
 	@Deprecated
-	@Transactional(readOnly = true)
 	@Authorized(PrivilegeConstants.VIEW_FORMS)
 	public List<Form> getForms(boolean publishedOnly) throws APIException;
 	
@@ -234,7 +221,6 @@ public interface FormService extends OpenmrsService {
 	 *             {@link #getForms(String, Boolean, Collection, Boolean, Collection, Collection)}
 	 */
 	@Deprecated
-	@Transactional(readOnly = true)
 	@Authorized(PrivilegeConstants.VIEW_FORMS)
 	public List<Form> getForms(boolean publishedOnly, boolean includeRetired) throws APIException;
 	
@@ -338,7 +324,6 @@ public interface FormService extends OpenmrsService {
 	 */
 	@Deprecated
 	@Authorized(PrivilegeConstants.VIEW_FIELD_TYPES)
-	@Transactional(readOnly = true)
 	public List<FieldType> getFieldTypes() throws APIException;
 	
 	/**
@@ -349,7 +334,6 @@ public interface FormService extends OpenmrsService {
 	 * @should also get retired field types
 	 */
 	@Authorized(PrivilegeConstants.VIEW_FIELD_TYPES)
-	@Transactional(readOnly = true)
 	public List<FieldType> getAllFieldTypes() throws APIException;
 	
 	/**
@@ -362,7 +346,6 @@ public interface FormService extends OpenmrsService {
 	 * @should get all field types excluding retired when includeRetired equals false
 	 */
 	@Authorized(PrivilegeConstants.VIEW_FIELD_TYPES)
-	@Transactional(readOnly = true)
 	public List<FieldType> getAllFieldTypes(boolean includeRetired) throws APIException;
 	
 	/**
@@ -373,7 +356,6 @@ public interface FormService extends OpenmrsService {
 	 * @throws APIException
 	 * @should return null when no field type matching given id
 	 */
-	@Transactional(readOnly = true)
 	@Authorized(PrivilegeConstants.VIEW_FIELD_TYPES)
 	public FieldType getFieldType(Integer fieldTypeId) throws APIException;
 	
@@ -385,14 +367,12 @@ public interface FormService extends OpenmrsService {
 	 * @should find object given valid uuid
 	 * @should return null if no object found with given uuid
 	 */
-	@Transactional(readOnly = true)
 	public FieldType getFieldTypeByUuid(String uuid) throws APIException;
 	
 	/**
 	 * @deprecated use {@link #getAllForms()}
 	 */
 	@Deprecated
-	@Transactional(readOnly = true)
 	@Authorized(PrivilegeConstants.VIEW_FORMS)
 	public List<Form> getForms() throws APIException;
 	
@@ -400,7 +380,6 @@ public interface FormService extends OpenmrsService {
 	 * @deprecated use {@link #getFormsContainingConcept(Concept)}
 	 */
 	@Deprecated
-	@Transactional(readOnly = true)
 	@Authorized(PrivilegeConstants.VIEW_FORMS)
 	public Set<Form> getForms(Concept c) throws APIException;
 	
@@ -414,7 +393,6 @@ public interface FormService extends OpenmrsService {
 	 * @should get forms with field matching given concept
 	 * @should get all forms for concept
 	 */
-	@Transactional(readOnly = true)
 	@Authorized(PrivilegeConstants.VIEW_FORMS)
 	public List<Form> getFormsContainingConcept(Concept concept) throws APIException;
 	
@@ -422,7 +400,6 @@ public interface FormService extends OpenmrsService {
 	 * @deprecated use {@link Form#getFormFields()}
 	 */
 	@Deprecated
-	@Transactional(readOnly = true)
 	@Authorized(PrivilegeConstants.VIEW_FORMS)
 	public List<FormField> getFormFields(Form form) throws APIException;
 	
@@ -433,7 +410,6 @@ public interface FormService extends OpenmrsService {
 	 * @throws APIException
 	 * @should get all form fields including retired
 	 */
-	@Transactional(readOnly = true)
 	@Authorized(PrivilegeConstants.VIEW_FORMS)
 	public List<FormField> getAllFormFields() throws APIException;
 	
@@ -443,7 +419,6 @@ public interface FormService extends OpenmrsService {
 	 * @deprecated use {@link #getFields(String)}
 	 */
 	@Deprecated
-	@Transactional(readOnly = true)
 	@Authorized(PrivilegeConstants.VIEW_FORMS)
 	public List<Field> findFields(String searchPhrase) throws APIException;
 	
@@ -459,7 +434,6 @@ public interface FormService extends OpenmrsService {
 	 * @should get fields with name matching fuzzySearchPhrase at end
 	 * @should return fields in alphabetical order by name
 	 */
-	@Transactional(readOnly = true)
 	@Authorized(PrivilegeConstants.VIEW_FORMS)
 	public List<Field> getFields(String fuzzySearchPhrase) throws APIException;
 	
@@ -467,7 +441,6 @@ public interface FormService extends OpenmrsService {
 	 * @deprecated use {@link #getFieldsByConcept(Concept)}
 	 */
 	@Deprecated
-	@Transactional(readOnly = true)
 	@Authorized(PrivilegeConstants.VIEW_FORMS)
 	public List<Field> findFields(Concept concept) throws APIException;
 	
@@ -479,7 +452,6 @@ public interface FormService extends OpenmrsService {
 	 * @throws APIException
 	 * @should get fields with concept matching given concept
 	 */
-	@Transactional(readOnly = true)
 	@Authorized(PrivilegeConstants.VIEW_FORMS)
 	public List<Field> getFieldsByConcept(Concept concept) throws APIException;
 	
@@ -490,7 +462,6 @@ public interface FormService extends OpenmrsService {
 	 * @throws APIException
 	 * @should get all fields including retired
 	 */
-	@Transactional(readOnly = true)
 	@Authorized(PrivilegeConstants.VIEW_FORMS)
 	public List<Field> getAllFields() throws APIException;
 	
@@ -503,7 +474,6 @@ public interface FormService extends OpenmrsService {
 	 * @should get all fields including retired when includeRetired is true
 	 * @should get all fields excluding retired when includeRetired is false
 	 */
-	@Transactional(readOnly = true)
 	@Authorized(PrivilegeConstants.VIEW_FORMS)
 	public List<Field> getAllFields(boolean includeRetired) throws APIException;
 	
@@ -528,7 +498,6 @@ public interface FormService extends OpenmrsService {
 	 * @should get fields with attributeName in given attributeNames
 	 * @should get fields with selectMultiple equals true when given selectMultiple equals true
 	 */
-	@Transactional(readOnly = true)
 	@Authorized(PrivilegeConstants.VIEW_FORMS)
 	public List<Field> getFields(Collection<Form> forms, Collection<FieldType> fieldTypes, Collection<Concept> concepts,
 	        Collection<String> tableNames, Collection<String> attributeNames, Boolean selectMultiple,
@@ -539,7 +508,6 @@ public interface FormService extends OpenmrsService {
 	 * @deprecated use {@link #getAllFields()}
 	 */
 	@Deprecated
-	@Transactional(readOnly = true)
 	@Authorized(PrivilegeConstants.VIEW_FORMS)
 	public List<Field> getFields() throws APIException;
 	
@@ -551,7 +519,6 @@ public interface FormService extends OpenmrsService {
 	 * @throws APIException
 	 * @should return null if no field exists with given fieldId
 	 */
-	@Transactional(readOnly = true)
 	@Authorized(PrivilegeConstants.VIEW_FORMS)
 	public Field getField(Integer fieldId) throws APIException;
 	
@@ -563,7 +530,6 @@ public interface FormService extends OpenmrsService {
 	 * @should find object given valid uuid
 	 * @should return null if no object found with given uuid
 	 */
-	@Transactional(readOnly = true)
 	public Field getFieldByUuid(String uuid) throws APIException;
 	
 	/**
@@ -574,7 +540,6 @@ public interface FormService extends OpenmrsService {
 	 * @should find object given valid uuid
 	 * @should return null if no object found with given uuid
 	 */
-	@Transactional(readOnly = true)
 	public FieldAnswer getFieldAnswerByUuid(String uuid) throws APIException;
 	
 	/**
@@ -640,7 +605,6 @@ public interface FormService extends OpenmrsService {
 	 * @throws APIException
 	 * @should return null if no formField exists with given id
 	 */
-	@Transactional(readOnly = true)
 	@Authorized(PrivilegeConstants.VIEW_FORMS)
 	public FormField getFormField(Integer formFieldId) throws APIException;
 	
@@ -652,7 +616,6 @@ public interface FormService extends OpenmrsService {
 	 * @should find object given valid uuid
 	 * @should return null if no object found with given uuid
 	 */
-	@Transactional(readOnly = true)
 	public FormField getFormFieldByUuid(String uuid) throws APIException;
 	
 	/**
@@ -667,7 +630,6 @@ public interface FormService extends OpenmrsService {
 	 * @see #getFormField(Form, Concept, Collection, boolean)
 	 * @should get formField for given form and concept
 	 */
-	@Transactional(readOnly = true)
 	@Authorized(PrivilegeConstants.VIEW_FORMS)
 	public FormField getFormField(Form form, Concept concept) throws APIException;
 	
@@ -693,7 +655,6 @@ public interface FormService extends OpenmrsService {
 	 * @should simply return null for nonexistent forms
 	 * @should ignore formFields passed to ignoreFormFields
 	 */
-	@Transactional(readOnly = true)
 	@Authorized(PrivilegeConstants.VIEW_FORMS)
 	public FormField getFormField(Form form, Concept concept, Collection<FormField> ignoreFormFields, boolean force)
 	        throws APIException;
@@ -747,7 +708,6 @@ public interface FormService extends OpenmrsService {
 	 * @see #getForms(String, Boolean, Collection, Boolean, Collection, Collection)
 	 */
 	@Deprecated
-	@Transactional(readOnly = true)
 	@Authorized(PrivilegeConstants.VIEW_FORMS)
 	public List<Form> findForms(String text, boolean includeUnpublished, boolean includeRetired);
 	
@@ -798,7 +758,7 @@ public interface FormService extends OpenmrsService {
 	
 	/**
 	 * Finds a FormResource by its id
-	 *
+	 * 
 	 * @param formResourceId the id of the resource
 	 * @should find a saved FormResource
 	 * @should return null if no FormResource found
@@ -808,7 +768,7 @@ public interface FormService extends OpenmrsService {
 	
 	/**
 	 * Finds a FormResource by its uuid
-	 *
+	 * 
 	 * @param uuid the uuid of the resource
 	 * @since 1.9
 	 */
@@ -828,14 +788,14 @@ public interface FormService extends OpenmrsService {
 	 * 
 	 * @param form
 	 * @return the resources attached to the form
-	 * @throws APIException 
+	 * @throws APIException
 	 * @since 1.9
 	 */
 	public Collection<FormResource> getFormResourcesForForm(Form form) throws APIException;
 	
 	/**
 	 * Saves or updates the given form resource
-	 *
+	 * 
 	 * @param formResource the resource to be saved
 	 * @should persist a FormResource
 	 * @should overwrite an existing resource with same name
@@ -846,7 +806,7 @@ public interface FormService extends OpenmrsService {
 	
 	/**
 	 * Purges a form resource
-	 *
+	 * 
 	 * @param formResource the resource to be purged
 	 * @should delete a form resource
 	 * @since 1.9

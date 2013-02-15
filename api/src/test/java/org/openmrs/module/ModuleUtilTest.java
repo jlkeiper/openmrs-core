@@ -13,6 +13,7 @@
  */
 package org.openmrs.module;
 
+import java.io.File;
 import java.net.URL;
 
 import junit.framework.Assert;
@@ -21,6 +22,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.openmrs.test.BaseContextSensitiveTest;
 import org.openmrs.test.Verifies;
+import org.openmrs.util.OpenmrsUtil;
 
 /**
  * Tests methods on the {@link ModuleUtil} class
@@ -283,7 +285,6 @@ public class ModuleUtilTest extends BaseContextSensitiveTest {
 	
 	/**
 	 * @see {@link ModuleUtil#matchRequiredVersions(String,String)}
-	 * 
 	 */
 	@Test
 	@Verifies(value = "should allow release type in the version", method = "matchRequiredVersions(String,String)")
@@ -408,25 +409,69 @@ public class ModuleUtilTest extends BaseContextSensitiveTest {
 	
 	/**
 	 * @see {@link ModuleUtil#compareVersion(String,String)}
-	 * 
 	 */
 	@Test
 	@Verifies(value = "should correctly comparing two version numbers", method = "compareVersion(String,String)")
 	public void compareVersion_shouldCorrectlyComparingTwoVersionNumbers() throws Exception {
 		String olderVersion = "2.1.1";
 		String newerVersion = "2.1.10";
-		ModuleUtil.compareVersion(olderVersion, newerVersion);
+		Assert.assertTrue(ModuleUtil.compareVersion(olderVersion, newerVersion) < 0);
 	}
 	
 	/**
 	 * @see {@link ModuleUtil#compareVersion(String,String)}
-	 * 
 	 */
 	@Test
 	@Verifies(value = "treat SNAPSHOT as earliest version", method = "compareVersion(String,String)")
 	public void compareVersion_shouldTreatSNAPSHOTAsEarliestVersion() throws Exception {
-		String olderVersion = "1.8.4-SNAPSHOT";
-		String newerVersion = "1.8.3";
-		Assert.assertTrue(ModuleUtil.compareVersion(olderVersion, newerVersion) > 0);
+		String olderVersion = "1.8.3";
+		String newerVersion = "1.8.4-SNAPSHOT";
+		Assert.assertTrue(ModuleUtil.compareVersion(newerVersion, olderVersion) > 0);
+		//should still return the correct value if the arguments are switched
+		Assert.assertTrue(ModuleUtil.compareVersion(olderVersion, newerVersion) < 0);
+	}
+	
+	/**
+	 * @see {@link ModuleUtil#getModuleRepository()}
+	 */
+	@Test
+	@Verifies(value = "should use the runtime property as the first choice if specified", method = "getModuleRepository()")
+	public void getModuleRepository_shouldUseTheRuntimePropertyAsTheFirstChoiceIfSpecified() throws Exception {
+		final String folderName = "test_folder";
+		File testFolder = null;
+		runtimeProperties.setProperty(ModuleConstants.REPOSITORY_FOLDER_RUNTIME_PROPERTY, folderName);
+		try {
+			testFolder = ModuleUtil.getModuleRepository();
+			Assert.assertNotNull(testFolder);
+			Assert.assertEquals(new File(OpenmrsUtil.getApplicationDataDirectory(), folderName), ModuleUtil
+			        .getModuleRepository());
+		}
+		finally {
+			if (testFolder != null)
+				testFolder.deleteOnExit();
+			runtimeProperties.setProperty(ModuleConstants.REPOSITORY_FOLDER_RUNTIME_PROPERTY, "");
+		}
+	}
+	
+	/**
+	 * @see {@link ModuleUtil#getModuleRepository()}
+	 */
+	@Test
+	@Verifies(value = "should return the correct file if the runtime property is an absolute path", method = "getModuleRepository()")
+	public void getModuleRepository_shouldReturnTheCorrectFileIfTheRuntimePropertyIsAnAbsolutePath() throws Exception {
+		final File expectedModuleRepo = new File(System.getProperty("java.io.tmpdir"), "test_folder");
+		expectedModuleRepo.mkdirs();
+		
+		runtimeProperties.setProperty(ModuleConstants.REPOSITORY_FOLDER_RUNTIME_PROPERTY, expectedModuleRepo
+		        .getAbsolutePath());
+		try {
+			File testFolder = ModuleUtil.getModuleRepository();
+			Assert.assertNotNull(testFolder);
+			Assert.assertEquals(expectedModuleRepo, testFolder);
+		}
+		finally {
+			runtimeProperties.setProperty(ModuleConstants.REPOSITORY_FOLDER_RUNTIME_PROPERTY, "");
+			expectedModuleRepo.deleteOnExit();
+		}
 	}
 }

@@ -34,8 +34,9 @@ public class AdminSteps extends Steps {
 	}
 
 	@Then("take me to $title page")
-	public void verifyAdminPage(String title) {
-		assertPresenceOf(title().with(text(equalTo("OpenMRS - " + title))));
+	public void verifyAdminPage(String title) throws InterruptedException {
+        Thread.sleep(5000);
+        assertPresenceOf(title().with(text(equalTo("OpenMRS - " + title))));
 	}
 
 }

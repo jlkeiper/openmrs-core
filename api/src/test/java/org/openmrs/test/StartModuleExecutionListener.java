@@ -13,6 +13,8 @@
  */
 package org.openmrs.test;
 
+import java.net.URL;
+import java.util.Enumeration;
 import java.util.Properties;
 
 import org.apache.commons.lang.StringUtils;
@@ -23,9 +25,10 @@ import org.openmrs.module.ModuleConstants;
 import org.openmrs.module.ModuleFactory;
 import org.openmrs.module.ModuleInteroperabilityTest;
 import org.openmrs.module.ModuleUtil;
+import org.openmrs.util.OpenmrsClassLoader;
 import org.springframework.beans.factory.xml.XmlBeanDefinitionReader;
 import org.springframework.context.support.GenericApplicationContext;
-import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.test.context.TestContext;
 import org.springframework.test.context.support.AbstractTestExecutionListener;
 
@@ -88,8 +91,21 @@ public class StartModuleExecutionListener extends AbstractTestExecutionListener 
 				 */
 				GenericApplicationContext ctx = new GenericApplicationContext(testContext.getApplicationContext());
 				XmlBeanDefinitionReader xmlReader = new XmlBeanDefinitionReader(ctx);
-				xmlReader.loadBeanDefinitions(new ClassPathResource("moduleApplicationContext.xml"));
-				ctx.refresh();
+				
+				Enumeration<URL> list = OpenmrsClassLoader.getInstance().getResources("moduleApplicationContext.xml");
+				while (list.hasMoreElements()) {
+					xmlReader.loadBeanDefinitions(new UrlResource(list.nextElement()));
+				}
+				
+				//ensure that when refreshing, we use the openmrs class loader for the started modules.
+				boolean useSystemClassLoader = Context.isUseSystemClassLoader();
+				Context.setUseSystemClassLoader(false);
+				try {
+					ctx.refresh();
+				}
+				finally {
+					Context.setUseSystemClassLoader(useSystemClassLoader);
+				}
 				
 				// session is closed by the test framework
 				//Context.closeSession();
@@ -97,4 +113,12 @@ public class StartModuleExecutionListener extends AbstractTestExecutionListener 
 		}
 	}
 	
+	@Override
+	public void afterTestClass(TestContext testContext) throws Exception {
+		StartModule startModuleAnnotation = testContext.getTestClass().getAnnotation(StartModule.class);
+		
+		if (startModuleAnnotation != null) {
+			ModuleUtil.shutdown();
+		}
+	}
 }

@@ -14,7 +14,6 @@
 package org.openmrs.web.controller.patient;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -163,7 +162,6 @@ public class ShortPatientFormController {
 	@ModelAttribute("identifierTypes")
 	public List<PatientIdentifierType> getIdentifierTypes() {
 		final List<PatientIdentifierType> list = Context.getPatientService().getAllPatientIdentifierTypes();
-		Collections.sort(list);
 		return list;
 	}
 	
@@ -357,6 +355,15 @@ public class ShortPatientFormController {
 	@ModelAttribute("relationshipsMap")
 	private Map<String, Relationship> getRelationshipsMap(@ModelAttribute("patientModel") ShortPatientModel patientModel,
 	        WebRequest request) {
+		
+		// Check if relationships must be shown
+		String showRelationships = Context.getAdministrationService().getGlobalProperty(
+		    OpenmrsConstants.GLOBAL_PROPERTY_NEWPATIENTFORM_SHOW_RELATIONSHIPS, "false");
+		
+		if ("false".equals(showRelationships)) {
+			return new LinkedHashMap<String, Relationship>();
+		}
+		
 		Person person = patientModel.getPatient();
 		Map<String, Relationship> relationshipMap = new LinkedHashMap<String, Relationship>();
 		
@@ -552,7 +559,7 @@ public class ShortPatientFormController {
 			if (!getPersonNameString(personName).equalsIgnoreCase(getPersonNameString(personNameCache))) {
 				if (log.isDebugEnabled())
 					log.debug("Voiding person name with id: " + personName.getId() + " and replacing it with a new one: "
-					        + personName.toString());
+					        + personName.getFullName());
 				foundChanges = true;
 				// create a new one and copy the changes to it
 				PersonName newName = PersonName.newInstance(personName);
@@ -571,7 +578,7 @@ public class ShortPatientFormController {
 				personName.setPreferred(false);
 				personName.setVoided(true);
 				personName.setVoidReason(Context.getMessageSourceService().getMessage("general.voidReasonWithArgument",
-				    new Object[] { newName.toString() }, "Voided because it was edited to: " + newName.toString(),
+				    new Object[] { newName.getFullName() }, "Voided because it was edited to: " + newName.getFullName(),
 				    Context.getLocale()));
 				
 				// add the created name

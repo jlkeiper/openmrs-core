@@ -24,6 +24,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -64,10 +65,12 @@ import org.openmrs.module.ModuleFactory;
 import org.openmrs.module.ModuleUtil;
 import org.openmrs.reporting.AbstractReportObject;
 import org.openmrs.reporting.Report;
+import org.openmrs.util.HttpClient;
 import org.openmrs.util.LocaleUtility;
 import org.openmrs.util.OpenmrsConstants;
 import org.openmrs.util.OpenmrsUtil;
 import org.openmrs.util.PrivilegeConstants;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.Errors;
 
@@ -78,6 +81,7 @@ import org.springframework.validation.Errors;
  * @see org.openmrs.api.AdministrationService
  * @see org.openmrs.api.context.Context
  */
+@Transactional
 public class AdministrationServiceImpl extends BaseOpenmrsService implements AdministrationService, GlobalPropertyListener {
 	
 	protected Log log = LogFactory.getLog(getClass());
@@ -90,6 +94,8 @@ public class AdministrationServiceImpl extends BaseOpenmrsService implements Adm
 	 * An always up-to-date collection of the allowed locales.
 	 */
 	private GlobalLocaleList globalLocaleList;
+	
+	private HttpClient implementationIdHttpClient;
 	
 	/**
 	 * Default empty constructor
@@ -520,22 +526,6 @@ public class AdministrationServiceImpl extends BaseOpenmrsService implements Adm
 	 * @deprecated moved to ConceptService
 	 */
 	@Deprecated
-	public void updateConceptSetDerived(Concept concept) throws APIException {
-		Context.getConceptService().updateConceptSetDerived(concept);
-	}
-	
-	/**
-	 * @deprecated moved to ConceptService
-	 */
-	@Deprecated
-	public void updateConceptSetDerived() throws APIException {
-		Context.getConceptService().updateConceptSetDerived();
-	}
-	
-	/**
-	 * @deprecated moved to ConceptService
-	 */
-	@Deprecated
 	public void createConceptProposal(ConceptProposal cp) throws APIException {
 		Context.getConceptService().saveConceptProposal(cp);
 	}
@@ -583,6 +573,7 @@ public class AdministrationServiceImpl extends BaseOpenmrsService implements Adm
 	 * @deprecated
 	 */
 	@Deprecated
+	@Transactional(readOnly = true)
 	public Collection<?> getMRNGeneratorLog() throws APIException {
 		if (!Context.hasPrivilege(PrivilegeConstants.EDIT_PATIENTS))
 			throw new APIAuthenticationException("Privilege required: " + PrivilegeConstants.EDIT_PATIENTS);
@@ -606,6 +597,7 @@ public class AdministrationServiceImpl extends BaseOpenmrsService implements Adm
 	/**
 	 * @see org.openmrs.api.AdministrationService#getSystemVariables()
 	 */
+	@Transactional(readOnly = true)
 	public SortedMap<String, String> getSystemVariables() throws APIException {
 		if (systemVariables == null) {
 			systemVariables = new TreeMap<String, String>();
@@ -636,6 +628,7 @@ public class AdministrationServiceImpl extends BaseOpenmrsService implements Adm
 	/**
 	 * @see org.openmrs.api.AdministrationService#getGlobalProperty(java.lang.String)
 	 */
+	@Transactional(readOnly = true)
 	public String getGlobalProperty(String propertyName) throws APIException {
 		// This method should not have any authorization check
 		if (propertyName == null)
@@ -648,6 +641,7 @@ public class AdministrationServiceImpl extends BaseOpenmrsService implements Adm
 	 * @see org.openmrs.api.AdministrationService#getGlobalProperty(java.lang.String,
 	 *      java.lang.String)
 	 */
+	@Transactional(readOnly = true)
 	public String getGlobalProperty(String propertyName, String defaultValue) throws APIException {
 		String s = getGlobalProperty(propertyName);
 		if (s == null)
@@ -658,6 +652,7 @@ public class AdministrationServiceImpl extends BaseOpenmrsService implements Adm
 	/**
 	 * @see org.openmrs.api.AdministrationService#getGlobalPropertyObject(java.lang.String)
 	 */
+	@Transactional(readOnly = true)
 	public GlobalProperty getGlobalPropertyObject(String propertyName) {
 		return dao.getGlobalPropertyObject(propertyName);
 	}
@@ -667,6 +662,7 @@ public class AdministrationServiceImpl extends BaseOpenmrsService implements Adm
 	 * @deprecated
 	 */
 	@Deprecated
+	@Transactional(readOnly = true)
 	public List<GlobalProperty> getGlobalProperties() throws APIException {
 		return getAllGlobalProperties();
 	}
@@ -692,11 +688,28 @@ public class AdministrationServiceImpl extends BaseOpenmrsService implements Adm
 	/**
 	 * @see org.openmrs.api.AdministrationService#setGlobalProperty(java.lang.String,
 	 *      java.lang.String)
-	 * @deprecated
 	 */
-	@Deprecated
 	public void setGlobalProperty(String propertyName, String propertyValue) throws APIException {
-		Context.getAdministrationService().saveGlobalProperty(new GlobalProperty(propertyName, propertyValue));
+		GlobalProperty gp = getGlobalPropertyObject(propertyName);
+		if (gp == null) {
+			gp = new GlobalProperty();
+			gp.setProperty(propertyName);
+		}
+		gp.setPropertyValue(propertyValue);
+		dao.saveGlobalProperty(gp);
+	}
+	
+	/**
+	 * @see org.openmrs.api.AdministrationService#updateGlobalProperty(java.lang.String,
+	 *      java.lang.String)
+	 */
+	public void updateGlobalProperty(String propertyName, String propertyValue) throws IllegalStateException {
+		GlobalProperty gp = getGlobalPropertyObject(propertyName);
+		if (gp == null) {
+			throw new IllegalStateException("Global property with the given propertyName does not exist" + propertyName);
+		}
+		gp.setPropertyValue(propertyValue);
+		dao.saveGlobalProperty(gp);
 	}
 	
 	/**
@@ -731,6 +744,7 @@ public class AdministrationServiceImpl extends BaseOpenmrsService implements Adm
 	/**
 	 * @see org.openmrs.api.AdministrationService#getAllGlobalProperties()
 	 */
+	@Transactional(readOnly = true)
 	public List<GlobalProperty> getAllGlobalProperties() throws APIException {
 		return dao.getAllGlobalProperties();
 	}
@@ -738,6 +752,7 @@ public class AdministrationServiceImpl extends BaseOpenmrsService implements Adm
 	/**
 	 * @see org.openmrs.api.AdministrationService#getGlobalPropertiesByPrefix(java.lang.String)
 	 */
+	@Transactional(readOnly = true)
 	public List<GlobalProperty> getGlobalPropertiesByPrefix(String prefix) {
 		return dao.getGlobalPropertiesByPrefix(prefix);
 	}
@@ -745,6 +760,7 @@ public class AdministrationServiceImpl extends BaseOpenmrsService implements Adm
 	/**
 	 * @see org.openmrs.api.AdministrationService#getGlobalPropertiesBySuffix(java.lang.String)
 	 */
+	@Transactional(readOnly = true)
 	public List<GlobalProperty> getGlobalPropertiesBySuffix(String suffix) {
 		return dao.getGlobalPropertiesBySuffix(suffix);
 	}
@@ -837,6 +853,7 @@ public class AdministrationServiceImpl extends BaseOpenmrsService implements Adm
 	/**
 	 * @see org.openmrs.api.AdministrationService#getImplementationId()
 	 */
+	@Transactional(readOnly = true)
 	public ImplementationId getImplementationId() throws APIException {
 		String property = getGlobalProperty(OpenmrsConstants.GLOBAL_PROPERTY_IMPLEMENTATION_ID);
 		
@@ -944,7 +961,7 @@ public class AdministrationServiceImpl extends BaseOpenmrsService implements Adm
 		data.put("description", description);
 		data.put("passphrase", passphrase);
 		
-		String response = OpenmrsUtil.postToUrl(OpenmrsConstants.IMPLEMENTATION_ID_REMOTE_CONNECTION_URL, data);
+		String response = implementationIdHttpClient.post(data);
 		response = response.trim();
 		
 		if ("".equals(response)) {
@@ -969,6 +986,7 @@ public class AdministrationServiceImpl extends BaseOpenmrsService implements Adm
 	/**
 	 * @see org.openmrs.api.AdministrationService#getAllowedLocales()
 	 */
+	@Transactional(readOnly = true)
 	public List<Locale> getAllowedLocales() {
 		// lazy-load the global locale list and initialize with current global property value
 		if (globalLocaleList == null) {
@@ -1006,6 +1024,7 @@ public class AdministrationServiceImpl extends BaseOpenmrsService implements Adm
 	/**
 	 * @see org.openmrs.api.AdministrationService#getPresentationLocales()
 	 */
+	@Transactional(readOnly = true)
 	public Set<Locale> getPresentationLocales() {
 		if (presentationLocales == null) {
 			presentationLocales = new HashSet<Locale>();
@@ -1057,6 +1076,7 @@ public class AdministrationServiceImpl extends BaseOpenmrsService implements Adm
 	/**
 	 * @see org.openmrs.api.AdministrationService#getGlobalPropertyByUuid(java.lang.String)
 	 */
+	@Transactional(readOnly = true)
 	public GlobalProperty getGlobalPropertyByUuid(String uuid) {
 		return dao.getGlobalPropertyByUuid(uuid);
 	}
@@ -1093,6 +1113,7 @@ public class AdministrationServiceImpl extends BaseOpenmrsService implements Adm
 	/**
 	 * @see org.openmrs.api.AdministrationService#getSystemInformation()
 	 */
+	@Transactional(readOnly = true)
 	public Map<String, Map<String, String>> getSystemInformation() throws APIException {
 		Map<String, Map<String, String>> systemInfoMap = new LinkedHashMap<String, Map<String, String>>();
 		
@@ -1211,6 +1232,7 @@ public class AdministrationServiceImpl extends BaseOpenmrsService implements Adm
 	 * @see AdministrationService#getMaximumPropertyLength(Class, String)
 	 */
 	@Override
+	@Transactional(readOnly = true)
 	public int getMaximumPropertyLength(Class<? extends OpenmrsObject> aClass, String fieldName) {
 		return dao.getMaximumPropertyLength(aClass, fieldName);
 	}
@@ -1219,7 +1241,57 @@ public class AdministrationServiceImpl extends BaseOpenmrsService implements Adm
 	 * @see org.openmrs.api.AdministrationService#validate(java.lang.Object, Errors)
 	 */
 	@Override
+	@Transactional(readOnly = true)
 	public void validate(Object object, Errors errors) throws APIException {
+		if (object == null)
+			throw new APIException(Context.getMessageSourceService().getMessage("error.null"));
+		
 		dao.validate(object, errors);
 	}
+	
+	/**
+	 * @see org.openmrs.api.AdministrationService#getSearchLocales(org.openmrs.User)
+	 */
+	@Override
+	@Transactional(readOnly = true)
+	public List<Locale> getSearchLocales() throws APIException {
+		Set<Locale> locales = new LinkedHashSet<Locale>();
+		
+		Locale currentLocale = Context.getLocale();
+		
+		locales.add(currentLocale); //the currently used full locale
+		
+		//the currently used language
+		locales.add(new Locale(currentLocale.getLanguage()));
+		
+		//add user's proficient locales
+		User user = Context.getAuthenticatedUser();
+		if (user != null) {
+			List<Locale> proficientLocales = user.getProficientLocales();
+			if (proficientLocales != null) {
+				locales.addAll(proficientLocales);
+			}
+		}
+		
+		//limit locales to only allowed locales
+		List<Locale> allowedLocales = getAllowedLocales();
+		if (allowedLocales != null) {
+			Set<Locale> retainLocales = new HashSet<Locale>();
+			
+			for (Locale allowedLocale : allowedLocales) {
+				retainLocales.add(allowedLocale);
+				retainLocales.add(new Locale(allowedLocale.getLanguage()));
+			}
+			
+			locales.retainAll(retainLocales);
+		}
+		
+		return new ArrayList<Locale>(locales);
+	}
+	
+	@Override
+	public void setImplementationIdHttpClient(HttpClient implementationIdHttpClient) {
+		this.implementationIdHttpClient = implementationIdHttpClient;
+	}
+	
 }

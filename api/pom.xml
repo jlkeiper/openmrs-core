@@ -13,7 +13,6 @@
       <dependency>
          <groupId>org.openmrs.test</groupId>
          <artifactId>openmrs-test</artifactId>
-         <version>${project.version}</version>
          <type>pom</type>
          <scope>test</scope>
       </dependency>
@@ -32,6 +31,10 @@
       <dependency>
          <groupId>commons-io</groupId>
          <artifactId>commons-io</artifactId>
+      </dependency>
+      <dependency>
+		<groupId>com.google.guava</groupId>
+		<artifactId>guava</artifactId>
       </dependency>
       <dependency>
          <groupId>org.azeckoski</groupId>
@@ -91,7 +94,15 @@
       </dependency>
       <dependency>
          <groupId>ca.uhn.hapi</groupId>
-         <artifactId>hapi</artifactId>
+         <artifactId>hapi-base</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>ca.uhn.hapi</groupId>
+         <artifactId>hapi-structures-v25</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>ca.uhn.hapi</groupId>
+         <artifactId>hapi-structures-v26</artifactId>
       </dependency>
       <dependency>
          <groupId>org.openmrs.simpleframework</groupId>
@@ -121,6 +132,7 @@
          <groupId>org.hibernate</groupId>
          <artifactId>hibernate-ehcache</artifactId>
       </dependency>
+      <!-- Removed until work on TRUNK-425 is complete
       <dependency>
          <groupId>org.hibernate</groupId>
          <artifactId>hibernate-search</artifactId>
@@ -129,6 +141,7 @@
          <groupId>org.hibernate</groupId>
          <artifactId>hibernate-search-analyzers</artifactId>
       </dependency>
+      -->
       <dependency>
          <groupId>dom4j</groupId>
          <artifactId>dom4j</artifactId>
@@ -168,17 +181,14 @@
       <dependency>
          <groupId>org.openmrs.liquibase.ext</groupId>
          <artifactId>modify-column</artifactId>
-         <version>2.0.2</version>
       </dependency>
       <dependency>
          <groupId>org.openmrs.liquibase.ext</groupId>
          <artifactId>identity-insert</artifactId>
-         <version>1.2.1</version>
       </dependency>
        <dependency>
          <groupId>org.openmrs.liquibase.ext</groupId>
          <artifactId>type-converter</artifactId>
-         <version>1.0.1</version>
       </dependency>
       <dependency>
          <groupId>xerces</groupId>
@@ -217,16 +227,16 @@
                </archive>
             </configuration>
          </plugin>
-         <plugin> 
-            <groupId>org.apache.maven.plugins</groupId> 
-            <artifactId>maven-surefire-plugin</artifactId> 
-            <configuration> 
-               <excludes> 
+         <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+               <excludes>
                   <exclude>**/test/*</exclude>
                   <!-- Exclude mail test, slows build, breaks portability with requirements on port 25 -->
-                  <exclude>**/notification/MessageServiceTest.java</exclude> 
-               </excludes> 
-            </configuration> 
+                  <exclude>**/notification/MessageServiceTest.java</exclude>
+               </excludes>
+            </configuration>
          </plugin>
          <plugin>
             <groupId>org.codehaus.mojo</groupId>
@@ -250,4 +260,23 @@
          </plugin>
       </plugins>
    </build>
+   
+   <profiles>
+		<profile>
+			<id>release</id>
+			<!-- Create sources and javadocs jar -->
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-source-plugin</artifactId>
+					</plugin>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-javadoc-plugin</artifactId>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
 </project>

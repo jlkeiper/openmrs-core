@@ -117,8 +117,10 @@ public class PatientProgramValidator implements Validator {
 					}
 					
 					//state should belong to one of the workflows in the program
+					// note that we are iterating over getAllWorkflows() here because we want to include
+					// retired workflows, and the workflows variable does not include retired workflows
 					boolean isValidPatientState = false;
-					for (ProgramWorkflow wf : workFlows) {
+					for (ProgramWorkflow wf : patientProgram.getProgram().getAllWorkflows()) {
 						if (wf.getStates().contains(patientState.getState())) {
 							isValidPatientState = true;
 							break;

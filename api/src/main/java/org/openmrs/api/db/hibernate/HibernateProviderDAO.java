@@ -13,10 +13,6 @@
  */
 package org.openmrs.api.db.hibernate;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.hibernate.Criteria;
@@ -36,6 +32,10 @@ import org.openmrs.ProviderAttribute;
 import org.openmrs.ProviderAttributeType;
 import org.openmrs.api.db.DAOException;
 import org.openmrs.api.db.ProviderDAO;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Hibernate specific Provider related functions. This class should not be used directly. All calls
@@ -96,16 +96,22 @@ public class HibernateProviderDAO implements ProviderDAO {
 	}
 	
 	/**
-	 * @see org.openmrs.api.db.ProviderDAO#getProvidersByPerson(org.openmrs.Person)
+	 * @see org.openmrs.api.db.ProviderDAO#getProvidersByPerson(org.openmrs.Person, boolean)
 	 */
 	@Override
-	public Collection<Provider> getProvidersByPerson(Person person) {
+	public Collection<Provider> getProvidersByPerson(Person person, boolean includeRetired) {
 		Criteria criteria = getSession().createCriteria(Provider.class);
+		if (!includeRetired) {
+			criteria.add(Expression.eq("retired", false));
+		} else {
+			//push retired Provider to the end of the returned list
+			criteria.addOrder(Order.asc("retired"));
+		}
 		criteria.add(Restrictions.eq("person", person));
+		
 		criteria.addOrder(Order.asc("providerId"));
-		@SuppressWarnings("unchecked")
-		List<Provider> list = criteria.list();
-		return list;
+		
+		return criteria.list();
 	}
 	
 	/**

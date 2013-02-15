@@ -46,6 +46,17 @@ public interface VisitService extends OpenmrsService {
 	List<VisitType> getAllVisitTypes();
 	
 	/**
+	 * Get all visit types based on includeRetired flag
+	 * 
+	 * @param includeRetired
+	 * @return List of all visit types
+	 * @since 1.9
+	 * @should get all visit types based on include retired flag.
+	 */
+	@Authorized( { PrivilegeConstants.MANAGE_VISIT_TYPES })
+	public List<VisitType> getAllVisitTypes(boolean includeRetired);
+	
+	/**
 	 * Gets a visit type by its visit type id.
 	 * 
 	 * @param visitTypeId the visit type id.
@@ -240,6 +251,7 @@ public interface VisitService extends OpenmrsService {
 	 * @should get visits by indications
 	 * @should get visits started between the given start dates
 	 * @should get visits ended between the given end dates
+	 * @should get visits that are still open even if minStartDatetime is specified
 	 * @should return all visits if includeVoided is set to true
 	 * @should get all visits with given attribute values
 	 * @should not find any visits if none have given attribute values
