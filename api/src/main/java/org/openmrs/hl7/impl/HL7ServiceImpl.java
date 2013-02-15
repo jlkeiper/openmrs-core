@@ -63,7 +63,6 @@ import org.openmrs.validator.PatientIdentifierValidator;
 import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.app.Application;
 import ca.uhn.hl7v2.app.ApplicationException;
-import ca.uhn.hl7v2.app.MessageTypeRouter;
 import ca.uhn.hl7v2.model.Message;
 import ca.uhn.hl7v2.model.v25.datatype.CX;
 import ca.uhn.hl7v2.model.v25.datatype.ID;
@@ -92,7 +91,7 @@ public class HL7ServiceImpl extends BaseOpenmrsService implements HL7Service {
 	
 	private GenericParser parser;
 	
-	private MessageTypeRouter router;
+	private OpenmrsHL7MessageTypeRouter router;
 	
 	/**
 	 * Private constructor to only support on singleton instance.
@@ -137,7 +136,7 @@ public class HL7ServiceImpl extends BaseOpenmrsService implements HL7Service {
 	 * @param router
 	 *            the router to use
 	 */
-	public void setRouter(MessageTypeRouter router) {
+	public void setRouter(OpenmrsHL7MessageTypeRouter router) {
 		this.router = router;
 	}
 	
@@ -934,14 +933,7 @@ public class HL7ServiceImpl extends BaseOpenmrsService implements HL7Service {
 	public void setHL7Handlers(Map<String, Application> handlers) {
 		// loop over all the given handlers and add them to the router
 		for (Map.Entry<String, Application> entry : handlers.entrySet()) {
-			String messageName = entry.getKey();
-			if (!messageName.contains("_"))
-				throw new APIException("Invalid messageName.  The format must be messageType_triggerEvent, e.g: ORU_R01");
-			
-			String messageType = messageName.split("_")[0];
-			String triggerEvent = messageName.split("_")[1];
-			
-			router.registerApplication(messageType, triggerEvent, entry.getValue());
+			registerHandler(entry.getKey(), entry.getValue());
 		}
 	}
 	
@@ -1112,7 +1104,23 @@ public class HL7ServiceImpl extends BaseOpenmrsService implements HL7Service {
 			throw new APIException("unable to convert HL7 archive file to a string: " + archive.getHL7Data(), e);
 		}
 	}
-	
+
+	/**
+	 * @see HL7Service#registerHandler(String, ca.uhn.hl7v2.app.Application)
+	 */
+	@Override
+	public void registerHandler(String key, Application handler) throws APIException {
+		String[] token = key.split("_");
+		Integer length = token.length;
+
+		String messageType = length >= 1 ? token[0] : null;
+		String triggerEvent = length >= 2 ? token[1] : null;
+		String sendingApplication = length >= 3 ? token[2] : null;
+		String messageControlId = length >= 4 ? token[3] : null;
+
+		router.registerApplication(messageType, triggerEvent, sendingApplication, messageControlId, handler);
+	}
+
 	/**
 	 * @see org.openmrs.hl7.HL7Service#migrateHl7InArchivesToFileSystem(Map)
 	 */

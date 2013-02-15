@@ -217,6 +217,7 @@ public class HL7ServiceTest extends BaseContextSensitiveTest {
 			Assert.fail("Should not be here. The ADR_A19 parser provided by the module throws an ApplicationException.");
 		}
 		catch (HL7Exception e) {
+			
 			if (e.getCause() != null)
 				Assert.assertEquals("In ADR A19 parser", e.getCause().getMessage());
 			else {

@@ -41,13 +41,13 @@ import org.openmrs.api.EncounterService;
 import org.openmrs.api.ObsService;
 import org.openmrs.api.PersonService;
 import org.openmrs.api.context.Context;
+import org.openmrs.hl7.impl.OpenmrsHL7MessageTypeRouter;
 import org.openmrs.test.BaseContextSensitiveTest;
 import org.openmrs.test.Verifies;
 import org.openmrs.util.OpenmrsConstants;
 
 import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.app.ApplicationException;
-import ca.uhn.hl7v2.app.MessageTypeRouter;
 import ca.uhn.hl7v2.model.Message;
 import ca.uhn.hl7v2.model.v25.message.ORU_R01;
 import ca.uhn.hl7v2.model.v25.segment.NK1;
@@ -65,10 +65,10 @@ public class ORUR01HandlerTest extends BaseContextSensitiveTest {
 	// hl7 parser to be used throughout
 	protected static GenericParser parser = new GenericParser();
 	
-	private static MessageTypeRouter router = new MessageTypeRouter();
+	private static OpenmrsHL7MessageTypeRouter router = new OpenmrsHL7MessageTypeRouter();
 	
 	static {
-		router.registerApplication("ORU", "R01", new ORUR01Handler());
+		router.registerApplication("ORU", "R01", null, null, new ORUR01Handler());
 	}
 	
 	/**

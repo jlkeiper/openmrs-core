@@ -17,6 +17,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import ca.uhn.hl7v2.app.Application;
 import org.openmrs.Encounter;
 import org.openmrs.Person;
 import org.openmrs.annotation.Authorized;
@@ -630,5 +631,13 @@ public interface HL7Service extends OpenmrsService {
 	 * @param archive
 	 */
 	public void loadHL7InArchiveData(HL7InArchive archive) throws APIException;
-	
+
+	/**
+	 * Registers an HL7 handler for a given key, overriding existing ones if already registered for that key.
+	 *
+	 * @param key
+	 * @param handler
+	 * @throws APIException
+	 */
+	public void registerHandler(String key, Application handler) throws APIException;
 }
