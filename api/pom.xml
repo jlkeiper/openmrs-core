@@ -202,6 +202,18 @@
          <groupId>xml-resolver</groupId>
          <artifactId>xml-resolver</artifactId>
       </dependency>
+       <dependency>
+           <groupId>javax.validation</groupId>
+           <artifactId>validation-api</artifactId>
+       </dependency>
+       <dependency>
+           <groupId>org.codehaus.jackson</groupId>
+           <artifactId>jackson-core-asl</artifactId>
+       </dependency>
+       <dependency>
+           <groupId>org.codehaus.jackson</groupId>
+           <artifactId>jackson-mapper-asl</artifactId>
+       </dependency>
    </dependencies>
    <build>
       <plugins>

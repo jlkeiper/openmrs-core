@@ -389,7 +389,7 @@ public class ORUR01HandlerTest extends BaseContextSensitiveTest {
 	@Test
 	@Verifies(value = "should return a Concept if given local coding system", method = "getConcept(String,String)")
 	public void getConcept_shouldReturnAConceptIfGivenLocalCodingSystem() throws Exception {
-		Assert.assertEquals(123, new ORUR01Handler().getConcept("123", "99DCT", "xj39bnj4k34nmf").getId().intValue());
+		Assert.assertEquals(5089, new ORUR01Handler().getConcept("5089", "99DCT", "xj39bnj4k34nmf").getId().intValue());
 	}
 	
 	/**
@@ -1202,15 +1202,15 @@ public class ORUR01HandlerTest extends BaseContextSensitiveTest {
 		Form form = enc.getForm();
 		Assert.assertEquals(1, form.getId().intValue());
 	}
-
+	
 	/**
-     * @see {@link ORUR01Handler#processMessage(Message)}
-     * 
-     */
-    @Test
-    @Verifies(value = "should set complex data for obs with complex concepts", method = "processMessage(Message)")
-    public void processMessage_shouldSetComplexDataForObsWithComplexConcepts() throws Exception {
-    	ObsHandler handler = new ObsHandler();
+	 * @see {@link ORUR01Handler#processMessage(Message)}
+	 * 
+	 */
+	@Test
+	@Verifies(value = "should set complex data for obs with complex concepts", method = "processMessage(Message)")
+	public void processMessage_shouldSetComplexDataForObsWithComplexConcepts() throws Exception {
+		ObsHandler handler = new ObsHandler();
 		final String handlerName = "NeigborHandler";
 		final String data = "{\"firstname\":\"Horatio\"}";
 		Context.getObsService().registerHandler(handlerName, handler);
@@ -1228,7 +1228,7 @@ public class ORUR01HandlerTest extends BaseContextSensitiveTest {
 			Context.getObsService().removeHandler(handlerName);
 		}
 		Assert.assertEquals(data, handler.getCreatedObs().getComplexData().getData());
-    }
+	}
 	
 	private class ObsHandler implements ComplexObsHandler {
 		

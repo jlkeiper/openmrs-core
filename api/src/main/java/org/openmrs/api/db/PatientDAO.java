@@ -70,6 +70,15 @@ public interface PatientDAO {
 	/**
 	 * @see org.openmrs.api.PatientService#getPatientIdentifiers(java.lang.String, java.util.List,
 	 *      java.util.List, java.util.List, java.lang.Boolean)
+	 *      
+	 * @should return all matching non voided patient identifiers if is preferred is set to null
+	 * @should return all matching non voided patient identifiers if is preferred is set to true
+	 * @should return all matching non voided patient identifiers if is preferred is set to false
+	 * @should fetch all patient identifiers belong to given patient
+	 * @should fetch all patient identifiers belong to given patients
+	 * @should fetch patient identifiers that equals given identifier
+	 * @should not fetch patient identifiers that partially matches given identifier  
+	 * @should not get voided patient identifiers 
 	 */
 	public List<PatientIdentifier> getPatientIdentifiers(String identifier,
 	        List<PatientIdentifierType> patientIdentifierTypes, List<Location> locations, List<Patient> patients,

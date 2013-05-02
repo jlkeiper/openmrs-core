@@ -343,7 +343,7 @@ function parseDateFromJsToString(sFormat, jsDate) {
  		jsDate = new Date();
  	}
  	
- 	return sFormat.replace(/mm/, tenrule(jsDate.getMonth()+1)).replace(/dd/, tenrule(jsDate.getDate())).replace(/yyyy/, (1900+jsDate.getYear()));
+ 	return sFormat.replace(/mm/, tenrule(jsDate.getMonth()+1)).replace(/dd/, tenrule(jsDate.getDate())).replace(/yyyy/, (jsDate.getFullYear() ? jsDate.getFullYear() : 1900+jsDate.getYear()));
 }
 
 /**
@@ -610,4 +610,16 @@ function showError(errorName) {
  */
 function hideError(errorName) {
 	document.getElementById(errorName).style.display = "none";
+}
+
+/**
+ * Forces the length of a field to be a maximum length
+ * See view/admin/encounters/encounterTypeForm.jsp for usage example
+ * @param object(Required) to be limited.
+ * @param maxLength(Required) the length of the limit.
+ */
+function forceMaxLength(object, maxLength) {
+    if( object.value.length >= maxLength) {
+       object.value = object.value.substring(0, maxLength); 
+    }
 }

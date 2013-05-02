@@ -251,11 +251,9 @@ public class HibernatePatientDAO implements PatientDAO {
 		criteria.createAlias("patient", "patient");
 		criteria.add(Expression.eq("patient.voided", false));
 		
-		// TODO add junit test for not getting voided
 		// make sure the patient object isn't voided
 		criteria.add(Expression.eq("voided", false));
 		
-		// TODO add junit test for getting by identifier (and for not getting by partial here)
 		if (identifier != null)
 			criteria.add(Expression.eq("identifier", identifier));
 		
@@ -270,7 +268,6 @@ public class HibernatePatientDAO implements PatientDAO {
 		if (patients.size() > 0)
 			criteria.add(Expression.in("patient", patients));
 		
-		// TODO add junit test for getting by null/true/false isPreferred
 		if (isPreferred != null)
 			criteria.add(Expression.eq("preferred", isPreferred));
 		
@@ -301,10 +298,10 @@ public class HibernatePatientDAO implements PatientDAO {
 	}
 	
 	/**
-	 * @should not return null excluding retired
-	 * @should not return retired
-	 * @should not return null including retired
-	 * @should return all
+	 * @should not return null when includeRetired is false
+	 * @should not return retired when includeRetired is false
+	 * @should not return null when includeRetired is true
+	 * @should return all when includeRetired is true
 	 * @see org.openmrs.api.db.PatientDAO#getAllPatientIdentifierTypes(boolean)
 	 */
 	@SuppressWarnings("unchecked")

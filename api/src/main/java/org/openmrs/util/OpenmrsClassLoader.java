@@ -34,6 +34,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
 
+import net.sf.ehcache.CacheManager;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.openmrs.api.APIException;
@@ -303,7 +305,60 @@ public class OpenmrsClassLoader extends URLClassLoader {
 		//			}
 		//		}
 		
+		//Shut down and remove all cache managers.
+		List<CacheManager> knownCacheManagers = CacheManager.ALL_CACHE_MANAGERS;
+		while (!knownCacheManagers.isEmpty()) {
+			CacheManager cacheManager = CacheManager.ALL_CACHE_MANAGERS.get(0);
+			try {
+				//This shuts down and removes the cache manager.
+				cacheManager.shutdown();
+				
+				//Just in case the the timer does not stop, set the cacheManager 
+				//timer to null because it references this class loader.
+				Field field = cacheManager.getClass().getDeclaredField("cacheManagerTimer");
+				field.setAccessible(true);
+				field.set(cacheManager, null);
+			}
+			catch (Throwable ex) {
+				log.error(ex.getMessage(), ex);
+			}
+		}
+		
+		MemoryLeakUtil.clearHibernateSessionFactories();
+				
+		OpenmrsClassScanner.destroyInstance();
+		
 		OpenmrsClassLoaderHolder.INSTANCE = null;
+	}
+	
+	/**
+	 * Sets the class loader, for all threads referencing a destroyed openmrs class loader, 
+	 * to the current one.
+	 */
+	public static void setThreadsToNewClassLoader() {
+		//Give ownership of all threads loaded by the old class loader to the new one.
+		//Examples of such threads are: Keep-Alive-Timer, MySQL Statement Cancellation Timer, etc
+		//That way they will no longer hold onto the destroyed OpenmrsClassLoader and hence
+		//allow it to be garbage collected after a spring application context refresh, when a new one is created.
+		Set<Thread> threadSet = Thread.getAllStackTraces().keySet();
+		Thread[] threadArray = threadSet.toArray(new Thread[threadSet.size()]);
+		for (Thread thread : threadArray) {
+			
+			ClassLoader classLoader = thread.getContextClassLoader();
+			
+			//Some threads have a null class loader reference. e.g Finalizer, Reference Handler, etc
+			if (classLoader == null)
+				continue;
+			
+			//Threads referencing the current class loader are good.
+			if (classLoader == getInstance())
+				continue;
+			
+			//For threads referencing any destroyed class loader, point them to the new one.
+			if (classLoader instanceof OpenmrsClassLoader) {
+				thread.setContextClassLoader(getInstance());
+			}
+		}
 	}
 	
 	// List all threads and recursively list all subgroup
@@ -342,6 +397,37 @@ public class OpenmrsClassLoader extends URLClassLoader {
 	}
 	
 	public static void onShutdown() {
+		
+		//Since we are shutting down, stop all threads that reference the openmrs class loader.
+		Set<Thread> threadSet = Thread.getAllStackTraces().keySet();
+		Thread[] threadArray = threadSet.toArray(new Thread[threadSet.size()]);
+		for (Thread thread : threadArray) {
+			
+			ClassLoader classLoader = thread.getContextClassLoader();
+			
+			//Threads like Finalizer, Reference Handler, etc have null class loader reference.
+			if (classLoader == null)
+				continue;
+					
+			if (classLoader instanceof OpenmrsClassLoader) {
+				try {					
+					//Set to WebappClassLoader just in case stopping fails.
+					thread.setContextClassLoader(classLoader.getParent());
+					
+					//Stopping the current thread will halt all current cleanup.
+					//So do not ever ever even attempt stopping it. :)
+					if (thread == Thread.currentThread())
+						continue;
+					
+					log.info("onShutdown Stopping thread: " + thread.getName());
+					thread.stop();
+				}
+				catch (Throwable ex) {
+					log.error(ex.getMessage(), ex);
+				}
+			}
+		}
+		
 		clearReferences();
 	}
 	

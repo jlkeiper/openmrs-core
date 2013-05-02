@@ -369,13 +369,13 @@
 
 	<servlet>
 		<servlet-name>openmrs_static_content</servlet-name>
-		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+		<servlet-class>org.openmrs.web.StaticDispatcherServlet</servlet-class>
 		<!-- Don't use "load-on-startup" in case initial setup wizard is needed -->
 	</servlet>
 	
 	<servlet>
 		<servlet-name>jsp</servlet-name>
-		<servlet-class>org.apache.jasper.servlet.JspServlet</servlet-class>
+		<servlet-class>org.openmrs.web.OpenmrsJspServlet</servlet-class>
 	</servlet>
 	
 	<!-- Gives access to servlets within modules -->
